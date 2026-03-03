@@ -1,0 +1,1446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WFH Surgeon</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        body {
+            background-color: #111;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-weight: bold;
+            background-image: radial-gradient(circle, #2a2a2a 0%, #080808 100%);
+        }
+        #game-container {
+            aspect-ratio: 16 / 9;
+            width: 100%;
+            max-width: 1280px;
+            max-height: 100vh;
+            position: relative;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 1);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 4px solid #333;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            cursor: none; /* Hide default cursor since we draw a custom one */
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas" width="1280" height="720"></canvas>
+</div>
+
+<script>
+/**
+ * WFH SURGEON - Modern / Beautified Aesthetic (Juicy Edition)
+ */
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+ctx.imageSmoothingEnabled = true;
+ctx.lineCap = 'round';
+ctx.lineJoin = 'round';
+
+// --- CONSTANTS & CONFIG ---
+const CW = canvas.width;
+const CH = canvas.height;
+const TOP_H = CH * 0.50; 
+const BOT_H = CH * 0.50;
+
+const COLORS = {
+    orWall: '#E0F2F1', 
+    orFloor: '#B2DFDB', 
+    deskBg: '#5D4037', 
+    laptopBezel: '#212121',
+    laptopScreen: '#0D47A1',
+    laptopGlow: '#1976D2',
+    green: '#00E676',
+    red: '#FF5252',
+    white: '#FFFFFF',
+    black: '#000000',
+    gold: '#FFD600',
+    gray: '#9E9E9E',
+    uiBg: '#F5F5F5',
+    uiDark: '#37474F'
+};
+
+const ARROWS = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+const ARROW_SYM = { 'ArrowUp': '⇧', 'ArrowDown': '⇩', 'ArrowLeft': '⇦', 'ArrowRight': '⇨' };
+
+const PROCEDURES = ["Left Knee Replacement", "Cranial Decompression", "Triple Bypass", "Emergency Appendectomy", "Kidney Transplant", "Robot-Assisted Tonsillectomy", "Spinal Fusion", "Cybernetic Eye Implant", "Spleen Defrag", "Heart Reboot", "Brain Dusting", "Ghost Removal (Surgical)"];
+const PATIENTS = ["John Doe", "Jane Smith", "Patient 8472", "The CEO", "Unknown Drifter", "Your Landlord", "A Literal Dog", "V.I.P. Client", "Three Kids in a Trenchcoat", "Florida Man", "Karen from Accounting", "Your Ex"];
+
+const STORE_ITEMS = [
+    {id: 'heart_restore', icon: '❤️', title: 'Black Market Organ', desc: 'Restores 1 lost heart.', price: 2000, consumable: true},
+    {id: 'lawyer', icon: '💼', title: 'Lawyer', desc: '+1 Max Heart Cap.', price: 1500},
+    {id: 'keyboard', icon: '⌨️', title: 'Mech Keyboard', desc: 'Keys heal Anes. +20% Time', price: 1200},
+    {id: 'ethernet', icon: '🔌', title: 'Ethernet', desc: 'Blocks Wi-Fi Lag.', price: 800},
+    {id: 'treats', icon: '🐟', title: 'Cat Treats', desc: 'Distracts the Cat.', price: 600},
+    {id: 'energy', icon: '🔋', title: 'Energy Drink', desc: 'Anes. drains slow.', price: 1000},
+    {id: 'mugLid', icon: '☕', title: 'Mug Lid', desc: 'No coffee spills.', price: 500},
+    {id: 'adBlock', icon: '🛑', title: 'AdBlocker Pro', desc: 'Blocks Boss Popups.', price: 900},
+    {id: 'powerBank', icon: '⚡', title: 'Power Bank', desc: 'Blocks Low Battery.', price: 850}
+];
+
+// --- TESTING VARIABLES ---
+const STARTING_CASH = 0; 
+const STARTING_RANK = 0; 
+
+// --- GLOBAL STATE ---
+const GAME = {
+    state: 'MENU', 
+    storePage: 0,
+    showQuitConfirm: false,
+    pendingStart: false,
+    cash: STARTING_CASH,
+    rank: STARTING_RANK, // Represents current level 0 to 14
+    highestRank: STARTING_RANK,
+    
+    upgrades: { keyboard: false, ethernet: false, treats: false, lawyer: false, energy: false, mugLid: false, adBlock: false, powerBank: false },
+
+    flavorText: "",
+    hearts: 3,
+    maxHearts: 3,
+    anesthesia: 100,
+    anesthesiaMax: 100,
+    phaseTimer: 0,
+    phaseTimerMax: 5000,
+    sequence: [],
+    currentIndex: 0,
+    phasesCompleted: 0,
+    phasesNeeded: 10,
+    perfectStreak: 0,
+    
+    // JUICE / ANIMATION TIMERS
+    redFlashTimer: 0,
+    greenFlashTimer: 0,
+    shakeTimer: 0,
+    arrowPopTimer: 0,
+    
+    armReach: 0, 
+    armGlitchTimer: 0,
+    bloodSpills: [],
+    
+    hazard: null, 
+    hazardTimer: 0,
+    hazardNextSpawn: 0,
+    
+    catClicks: 0,
+    adPos: {x:0, y:0, w: 360, h: 180},
+    batteryDrag: false,
+    plugPos: {x: 0, y: 0},
+    socketPos: {x: 0, y: 0},
+    dimLevel: 0,
+    coffeeWipe: 0,
+    routerClicks: 0,
+    routerFlashTimer: 0,
+    
+    inputBuffer: [],
+    lastResult: 'WIN', 
+    payout: 0,
+    
+    mouseX: CW/2, mouseY: CH/2,
+    lastMouseX: 0, lastMouseY: 0
+};
+
+// --- INPUT HANDLING ---
+function updateMousePos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    GAME.mouseX = (e.clientX - rect.left) * scaleX;
+    GAME.mouseY = (e.clientY - rect.top) * scaleY;
+}
+
+window.addEventListener('mousemove', (e) => {
+    updateMousePos(e);
+
+    if (GAME.hazard === 'battery' && GAME.batteryDrag) {
+        GAME.plugPos.x = GAME.mouseX;
+        GAME.plugPos.y = GAME.mouseY;
+    }
+    
+    if (GAME.hazard === 'coffee') {
+        const splatX = CW/2;
+        const splatY = TOP_H + 160; 
+        if (Math.hypot(GAME.mouseX - splatX, GAME.mouseY - splatY) < 220) {
+            const dist = Math.hypot(GAME.mouseX - GAME.lastMouseX, GAME.mouseY - GAME.lastMouseY);
+            GAME.coffeeWipe += dist;
+            if (GAME.coffeeWipe > 2500) clearHazard();
+        }
+    }
+    
+    GAME.lastMouseX = GAME.mouseX;
+    GAME.lastMouseY = GAME.mouseY;
+});
+
+window.addEventListener('mouseup', (e) => {
+    updateMousePos(e);
+    if (GAME.hazard === 'battery' && GAME.batteryDrag) {
+        GAME.batteryDrag = false;
+        const dx = GAME.plugPos.x - GAME.socketPos.x;
+        const dy = GAME.plugPos.y - GAME.socketPos.y;
+        if (Math.sqrt(dx*dx + dy*dy) < 80) clearHazard();
+    }
+});
+
+window.addEventListener('mousedown', (e) => {
+    updateMousePos(e);
+    const lx = CW/2 - 400; 
+    const ly = TOP_H + 20;
+    
+    if (GAME.state === 'MENU') {
+        const bx1 = lx + 120, bx2 = lx + 310, bx3 = lx + 500, by = ly + 110;
+        if (isHover(bx1, by, 160, 60)) { 
+            GAME.rank = STARTING_RANK; 
+            GAME.hearts = 3;
+            GAME.pendingStart = true;
+            GAME.state = 'HELP'; 
+        }
+        if (isHover(bx2, by, 160, 60)) GAME.state = 'STORE';
+        if (isHover(bx3, by, 160, 60)) GAME.state = 'HELP';
+        return;
+    }
+    
+    if (GAME.state === 'HELP') {
+        const mx = CW/2 - 350, my = CH/2 - 310; 
+        if (isHover(mx + 630, my + 15, 50, 50) || isHover(CW/2 - 110, my + 545, 220, 50)) {
+            if (GAME.pendingStart) {
+                GAME.pendingStart = false;
+                startOperation();
+            } else {
+                GAME.state = 'MENU';
+            }
+        }
+        return;
+    }
+    
+    if (GAME.state === 'STORE') {
+        if (isHover(lx + 30, ly + 25, 100, 40)) {
+            GAME.state = GAME.lastResult === 'WIN' && GAME.phasesCompleted >= GAME.phasesNeeded ? 'RESOLUTION' : 'MENU';
+        }
+        
+        const maxPage = Math.ceil(STORE_ITEMS.length / 4) - 1;
+        if (GAME.storePage > 0 && isHover(lx + 600, ly + 30, 40, 30)) GAME.storePage--;
+        if (GAME.storePage < maxPage && isHover(lx + 700, ly + 30, 40, 30)) GAME.storePage++;
+        
+        const pageItems = STORE_ITEMS.slice(GAME.storePage * 4, GAME.storePage * 4 + 4);
+        pageItems.forEach((item, i) => {
+            const col = i % 2;
+            const row = Math.floor(i / 2);
+            const ix = lx + 40 + (col * 365);
+            const iy = ly + 80 + (row * 65); 
+            
+            if (isHover(ix + 245, iy + 15, 90, 30)) {
+                if (item.consumable) {
+                    if (GAME.cash >= item.price && GAME.hearts < GAME.maxHearts) {
+                        GAME.cash -= item.price;
+                        GAME.hearts++;
+                    }
+                } else {
+                    if (GAME.upgrades[item.id]) return;
+                    if (GAME.cash >= item.price) {
+                        GAME.cash -= item.price;
+                        GAME.upgrades[item.id] = true;
+                        if (item.id === 'lawyer') {
+                            GAME.maxHearts = 4;
+                            GAME.hearts++; // Instantly grant the newly unlocked heart
+                        }
+                    }
+                }
+            }
+        });
+        return;
+    }
+    
+    if (GAME.state === 'RESOLUTION') {
+        if (GAME.showQuitConfirm) {
+            if (isHover(lx + 220, ly + 140, 160, 50)) { 
+                GAME.cash = STARTING_CASH;
+                GAME.highestRank = STARTING_RANK;
+                GAME.rank = STARTING_RANK; 
+                GAME.hearts = 3;
+                GAME.maxHearts = 3;
+                GAME.upgrades = { keyboard: false, ethernet: false, treats: false, lawyer: false, energy: false, mugLid: false, adBlock: false, powerBank: false };
+                GAME.showQuitConfirm = false;
+                GAME.state = 'MENU';
+                resetHospitalAnimations(); // Fully clear the OR room when going back to the menu
+            }
+            if (isHover(lx + 420, ly + 140, 160, 50)) { 
+                GAME.showQuitConfirm = false;
+            }
+            return;
+        }
+
+        if (GAME.lastResult === 'WIN') {
+            if (isHover(lx + 70, ly + 170, 200, 50)) startOperation(); 
+            if (isHover(lx + 300, ly + 170, 200, 50)) GAME.state = 'STORE'; 
+            if (isHover(lx + 530, ly + 170, 200, 50)) GAME.showQuitConfirm = true; 
+        } else {
+            const baseCost = (GAME.rank + 1) * 300;
+            const cost = Math.max(baseCost, Math.floor(GAME.cash * 0.75));
+
+            if (GAME.cash >= cost && isHover(lx + 70, ly + 170, 200, 50)) {
+                GAME.cash -= cost;
+                GAME.maxHearts = GAME.upgrades.lawyer ? 4 : 3;
+                GAME.hearts = GAME.maxHearts; // Fully replenish all available hearts for the retry
+                startOperation(); 
+            }
+            if (isHover(lx + 300, ly + 170, 200, 50)) {
+                GAME.state = 'STORE';
+            }
+            if (isHover(lx + 530, ly + 170, 200, 50)) {
+                GAME.showQuitConfirm = true; 
+            }
+        }
+        return;
+    }
+    
+    if (GAME.state === 'PLAYING') {
+        if (GAME.hazard === 'cat') {
+            const cx = CW/2; const cy = TOP_H + BOT_H/2;
+            if (isHover(cx - 150, cy - 150, 300, 300)) {
+                GAME.catClicks++;
+                if (GAME.catClicks >= 3) clearHazard();
+            }
+        }
+        else if (GAME.hazard === 'ad') {
+            if (isHover(GAME.adPos.x + GAME.adPos.w - 35, GAME.adPos.y + 5, 30, 30)) clearHazard();
+        }
+        else if (GAME.hazard === 'battery') {
+            const dx = GAME.mouseX - GAME.plugPos.x;
+            const dy = GAME.mouseY - GAME.plugPos.y;
+            if (Math.sqrt(dx*dx + dy*dy) < 70) GAME.batteryDrag = true;
+        }
+        else if (GAME.hazard === 'lag') {
+            const rx = 40; 
+            const ry = TOP_H + 90;
+            if (isHover(rx - 10, ry - 60, 200, 120)) { 
+                GAME.routerClicks++;
+                GAME.routerFlashTimer = 150; 
+                if (GAME.routerClicks >= 3) clearHazard();
+            }
+        }
+    }
+});
+
+window.addEventListener('keydown', (e) => {
+    if (GAME.state === 'PLAYING') {
+        if (GAME.hazard === 'ad' && e.code === 'Escape') {
+            clearHazard(); return;
+        }
+        if (ARROWS.includes(e.code)) {
+            // Prevent default scrolling for arrow keys
+            e.preventDefault();
+            
+            if (['cat', 'battery', 'ad', 'coffee'].includes(GAME.hazard)) return;
+            
+            if (GAME.hazard === 'lag') {
+                GAME.inputBuffer.push({ code: e.code, time: performance.now() + 800 }); 
+            } else {
+                processArrow(e.code);
+            }
+        }
+    }
+});
+
+function processArrow(code) {
+    if (code === GAME.sequence[GAME.currentIndex]) {
+        GAME.currentIndex++;
+        GAME.arrowPopTimer = 100;
+
+        // --- NEW MECH KEYBOARD BUFF: Correct Keys restore Anesthesia ---
+        if (GAME.upgrades.keyboard) {
+            GAME.anesthesia = Math.min(GAME.anesthesiaMax, GAME.anesthesia + 200);
+        }
+
+        if (GAME.currentIndex >= GAME.sequence.length) {
+            GAME.armReach = 200; 
+            chunkComplete();
+        }
+    } else {
+        GAME.hearts--;
+        GAME.redFlashTimer = 150;
+        GAME.shakeTimer = 300; 
+        GAME.perfectStreak = 0;
+        
+        GAME.armGlitchTimer = 800;
+        for (let b = 0; b < 15; b++) {
+            GAME.bloodSpills.push({
+                x: (Math.random() * 300) - 150,
+                y: (Math.random() * 60) - 30,
+                r: Math.random() * 25 + 10
+            });
+        }
+
+        if (GAME.hearts <= 0) triggerResolution('MALPRACTICE');
+    }
+}
+
+// --- UTILITIES ---
+function isHover(x, y, w, h) {
+    return GAME.mouseX >= x && GAME.mouseX <= x + w && GAME.mouseY >= y && GAME.mouseY <= y + h;
+}
+
+function drawRect(x, y, w, h, fill, stroke, strokeW = 4) {
+    if (fill) { ctx.fillStyle = fill; ctx.fillRect(x, y, w, h); }
+    if (stroke) { ctx.lineWidth = strokeW; ctx.strokeStyle = stroke; ctx.strokeRect(x, y, w, h); }
+}
+
+if (!ctx.roundRectPolyfill) {
+    ctx.roundRectPolyfill = function (x, y, w, h, r) {
+        if (w < 2 * r) r = w / 2;
+        if (h < 2 * r) r = h / 2;
+        this.beginPath();
+        this.moveTo(x+r, y);
+        this.arcTo(x+w, y,   x+w, y+h, r);
+        this.arcTo(x+w, y+h, x,   y+h, r);
+        this.arcTo(x,   y+h, x,   y,   r);
+        this.arcTo(x,   y,   x+w, y,   r);
+        this.closePath();
+        return this;
+    }
+}
+
+function drawRoundRect(x, y, w, h, r, fill, stroke, strokeW = 4) {
+    ctx.roundRectPolyfill(x, y, w, h, r);
+    if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+    if (stroke) { ctx.lineWidth = strokeW; ctx.strokeStyle = stroke; ctx.stroke(); }
+}
+
+function drawShadowRoundRect(x, y, w, h, r, fill, stroke, strokeW = 4) {
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+    ctx.shadowBlur = 10;
+    ctx.shadowOffsetY = 6;
+    drawRoundRect(x, y, w, h, r, fill, stroke, strokeW);
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
+}
+
+function drawText(text, x, y, size, fill, align = 'left', shadowCol = null, shadowBlur = 0) {
+    ctx.font = `bold ${size}px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif`;
+    ctx.textAlign = align;
+    ctx.textBaseline = 'middle';
+    
+    if (shadowCol) {
+        ctx.shadowColor = shadowCol;
+        ctx.shadowBlur = shadowBlur;
+        ctx.shadowOffsetY = 2;
+    }
+    
+    ctx.fillStyle = fill;
+    ctx.fillText(text, x, y);
+    
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
+}
+
+function drawButton(text, x, y, w, h, color, fontSize = 20, pulse = false) {
+    const hover = isHover(x, y, w, h);
+    const yOff = hover ? 3 : 0;
+    
+    if (!hover) {
+        ctx.shadowColor = 'rgba(0,0,0,0.3)';
+        ctx.shadowBlur = 8;
+        ctx.shadowOffsetY = 5;
+    }
+    
+    drawRoundRect(x, y + yOff, w, h, 12, hover ? '#FFF' : color, COLORS.black, 3);
+    
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
+    
+    let scale = 1;
+    if (pulse && !hover) scale = 1 + Math.sin(performance.now() / 200) * 0.04;
+    
+    ctx.save();
+    ctx.translate(x + w/2, y + h/2 + yOff);
+    ctx.scale(scale, scale);
+    drawText(text, 0, 0, fontSize, hover ? '#000' : '#FFF', 'center');
+    ctx.restore();
+}
+
+function getRankName(rankIndex) {
+    const titles = ['Intern', 'Resident', 'Attending', 'Chief', 'Surgeon General'];
+    const title = titles[Math.floor(rankIndex / 3)] || 'God of Surgery';
+    const subRank = ['I', 'II', 'III'][rankIndex % 3] || 'III';
+    return `${title} ${subRank} ★`;
+}
+
+// --- LOGIC ---
+function resetHospitalAnimations() {
+    GAME.redFlashTimer = 0;
+    GAME.greenFlashTimer = 0;
+    GAME.shakeTimer = 0;
+    GAME.arrowPopTimer = 0;
+    GAME.bloodSpills = [];
+    GAME.armGlitchTimer = 0;
+    GAME.armReach = 0;
+}
+
+function startOperation() {
+    // --- HAZARD CLEANUP: Ensure NO state carries over ---
+    GAME.hazard = null;
+    GAME.dimLevel = 0;
+    GAME.catClicks = 0;
+    GAME.coffeeWipe = 0;
+    GAME.routerClicks = 0;
+    GAME.inputBuffer = [];
+    GAME.batteryDrag = false;
+    
+    // --- ANIMATION CLEANUP ---
+    resetHospitalAnimations();
+
+    // Carry over hearts, but Lawyer sets a temporary cap
+    GAME.maxHearts = GAME.upgrades.lawyer ? 4 : 3;
+    if (GAME.hearts > GAME.maxHearts) GAME.hearts = GAME.maxHearts;
+    
+    // MATHEMATICALLY SCALED PROGRESSION (Levels 0 through 14)
+    GAME.anesthesiaMax = (45 - (GAME.rank * 1.1)) * 1000;
+    if (GAME.upgrades.energy) GAME.anesthesiaMax *= 1.2;
+    GAME.anesthesia = GAME.anesthesiaMax;
+    
+    GAME.phaseTimerMax = 8500 - (GAME.rank * 250);
+
+    // --- MECH KEYBOARD BUFF: +20% time extension ---
+    if (GAME.upgrades.keyboard) GAME.phaseTimerMax *= 1.2; 
+    
+    GAME.phasesNeeded = 3 + Math.floor(GAME.rank * 0.5);
+    GAME.phasesCompleted = 0;
+    GAME.perfectStreak = 0;
+    
+    const proc = PROCEDURES[Math.floor(Math.random() * PROCEDURES.length)];
+    const pat = PATIENTS[Math.floor(Math.random() * PATIENTS.length)];
+    GAME.flavorText = `${proc} | ${pat}`;
+    
+    GAME.hazardTimer = 0;
+    const hazFreqMin = 5000 - (GAME.rank * 210);
+    const hazFreqMax = 7000 - (GAME.rank * 210);
+    GAME.hazardNextSpawn = hazFreqMin + Math.random() * (hazFreqMax - hazFreqMin);
+    GAME.routerFlashTimer = 0;
+    
+    generateSequence(5 + Math.floor(GAME.rank * 0.45));
+    GAME.state = 'PLAYING';
+}
+
+function generateSequence(len) {
+    GAME.sequence = [];
+    for (let i = 0; i < len; i++) {
+        GAME.sequence.push(ARROWS[Math.floor(Math.random() * ARROWS.length)]);
+    }
+    GAME.currentIndex = 0;
+    GAME.phaseTimer = GAME.phaseTimerMax;
+}
+
+function chunkComplete() {
+    GAME.phasesCompleted++;
+    GAME.perfectStreak++;
+    GAME.greenFlashTimer = 200; 
+    
+    // Gaining a heart via 3 perfect sequences
+    if (GAME.perfectStreak >= 3 && GAME.hearts < GAME.maxHearts) {
+        GAME.hearts++;
+        GAME.perfectStreak = 0;
+    }
+    
+    if (GAME.phasesCompleted >= GAME.phasesNeeded) {
+        triggerResolution('WIN');
+    } else {
+        generateSequence(5 + Math.floor(GAME.rank * 0.45));
+    }
+}
+
+function spawnHazard() {
+    let pool = [];
+    if (!GAME.upgrades.adBlock) pool.push('ad');
+    if (!GAME.upgrades.powerBank) pool.push('battery');
+    if (!GAME.upgrades.ethernet) pool.push('lag');
+    if (!GAME.upgrades.mugLid) pool.push('coffee'); 
+    if (!GAME.upgrades.treats) pool.push('cat');
+    
+    if (pool.length === 0) return;
+    
+    GAME.hazard = pool[Math.floor(Math.random() * pool.length)];
+    GAME.coffeeWipe = 0;
+    GAME.routerClicks = 0;
+    
+    if (GAME.hazard === 'cat') GAME.catClicks = 0;
+    if (GAME.hazard === 'ad') {
+        const lx = CW/2 - 400;
+        const ly = TOP_H + 20;
+        GAME.adPos.w = 360; GAME.adPos.h = 180;
+        GAME.adPos.x = lx + 30 + (Math.random() * (740 - 360 - 30)); 
+        GAME.adPos.y = ly + 30 + (Math.random() * 30); 
+    }
+    if (GAME.hazard === 'battery') {
+        GAME.dimLevel = 0;
+        GAME.batteryDrag = false;
+        GAME.plugPos = {x: CW/2, y: CH - 100};
+        GAME.socketPos = {x: CW - 150, y: CH - 150};
+    }
+}
+
+function clearHazard() {
+    GAME.hazard = null;
+    GAME.coffeeWipe = 0;
+    GAME.dimLevel = 0;
+    
+    const hazFreqMin = 5000 - (GAME.rank * 210);
+    const hazFreqMax = 7000 - (GAME.rank * 210);
+    GAME.hazardNextSpawn = hazFreqMin + Math.random() * (hazFreqMax - hazFreqMin);
+}
+
+function triggerResolution(result) {
+    GAME.state = 'RESOLUTION';
+    GAME.lastResult = result;
+    
+    // --- HAZARD CLEANUP: Ensure screen isn't dark on next run ---
+    GAME.hazard = null; 
+    GAME.dimLevel = 0;
+    GAME.inputBuffer = [];
+    
+    if (result === 'WIN') {
+        if (GAME.rank < 14) GAME.rank++; // Total 15 Levels (0 to 14)
+        
+        const base = 200 + (GAME.rank * 100);
+        const heartBonus = GAME.hearts * (50 + GAME.rank * 10);
+        const timeBonus = Math.floor((GAME.anesthesia / 1000) * 10);
+        GAME.payout = base + heartBonus + timeBonus;
+        GAME.cash += GAME.payout;
+    } else {
+        GAME.payout = 0;
+    }
+    
+    // Reset all shift-based upgrades
+    GAME.upgrades = { keyboard: false, ethernet: false, treats: false, lawyer: false, energy: false, mugLid: false, adBlock: false, powerBank: false };
+}
+
+// --- RENDERERS ---
+
+function drawHospitalBg() {
+    drawRect(0, 0, CW, TOP_H, COLORS.orWall);
+    drawRect(0, TOP_H - 120, CW, 20, '#B0BEC5'); 
+    
+    drawRect(0, TOP_H - 100, CW, 100, COLORS.orFloor);
+    ctx.strokeStyle = '#80CBC4';
+    ctx.lineWidth = 2;
+    for(let i=0; i<CW; i+=100) {
+        ctx.beginPath(); ctx.moveTo(i, TOP_H - 100); ctx.lineTo(i - 40, TOP_H); ctx.stroke();
+    }
+    ctx.beginPath(); ctx.moveTo(0, TOP_H - 50); ctx.lineTo(CW, TOP_H - 50); ctx.stroke();
+
+    drawShadowRoundRect(CW - 180, TOP_H - 280, 140, 160, 10, '#ECEFF1', '#90A4AE', 3);
+    drawRoundRect(CW - 170, TOP_H - 270, 120, 40, 6, '#CFD8DC', '#90A4AE', 2);
+    drawRoundRect(CW - 120, TOP_H - 255, 20, 10, 5, '#546E7A'); 
+    drawRoundRect(CW - 170, TOP_H - 220, 120, 40, 6, '#CFD8DC', '#90A4AE', 2);
+    drawRoundRect(CW - 120, TOP_H - 205, 20, 10, 5, '#546E7A'); 
+    drawRoundRect(CW - 170, TOP_H - 170, 120, 40, 6, '#CFD8DC', '#90A4AE', 2);
+    drawRoundRect(CW - 120, TOP_H - 155, 20, 10, 5, '#546E7A'); 
+
+    drawShadowRoundRect(CW - 140, 20, 60, 60, 30, '#FAFAFA', '#90A4AE', 4);
+    ctx.strokeStyle = '#212121'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(CW - 110, 50, 20, 0, Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(CW - 110, 50); ctx.lineTo(CW - 110, 35); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(CW - 110, 50); ctx.lineTo(CW - 95, 50); ctx.stroke();
+
+    const bx = CW/2 + 180;
+    drawShadowRoundRect(bx, 20, 80, 100, 8, '#FAFAFA', '#B0BEC5', 2);
+    drawRoundRect(bx + 10, 30, 60, 40, 4, '#E0F7FA'); 
+    ctx.fillStyle = '#F48FB1'; ctx.beginPath(); ctx.arc(bx + 40, 50, 15, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#90A4AE';
+    ctx.fillRect(bx + 10, 80, 60, 4);
+    ctx.fillRect(bx + 10, 90, 40, 4);
+
+    drawShadowRoundRect(CW/2 - 20, -10, 40, 60, 10, '#90A4AE', '#546E7A', 3);
+    ctx.fillStyle = '#ECEFF1';
+    ctx.strokeStyle = '#78909C';
+    ctx.beginPath();
+    ctx.arc(CW/2, 40, 120, Math.PI, 0);
+    ctx.fill(); ctx.stroke();
+    
+    let grd = ctx.createLinearGradient(CW/2, 40, CW/2, TOP_H - 120);
+    grd.addColorStop(0, 'rgba(255, 255, 255, 0.25)');
+    grd.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    ctx.fillStyle = grd;
+    ctx.beginPath(); 
+    ctx.moveTo(CW/2 - 110, 40); 
+    ctx.lineTo(CW/2 + 110, 40);
+    ctx.lineTo(CW/2 + 300, TOP_H - 120);
+    ctx.lineTo(CW/2 - 300, TOP_H - 120);
+    ctx.fill();
+
+    drawShadowRoundRect(180, TOP_H - 260, 10, 160, 5, '#CFD8DC', '#90A4AE', 2);
+    drawRoundRect(165, TOP_H - 260, 40, 10, 5, '#CFD8DC', '#90A4AE', 2);
+    drawRoundRect(160, TOP_H - 250, 20, 35, 10, 'rgba(224, 247, 250, 0.8)', '#4DD0E1', 2); 
+    drawRoundRect(190, TOP_H - 250, 20, 30, 10, 'rgba(255, 82, 82, 0.8)', '#D32F2F', 2); 
+    
+    ctx.strokeStyle = '#81D4FA'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(170, TOP_H - 215); ctx.quadraticCurveTo(150, TOP_H - 160, CW/2 - 150, TOP_H - 150); ctx.stroke();
+    ctx.strokeStyle = '#FF5252'; ctx.lineWidth = 2; 
+    ctx.beginPath(); ctx.moveTo(200, TOP_H - 220); ctx.quadraticCurveTo(210, TOP_H - 180, CW/2 - 150, TOP_H - 150); ctx.stroke();
+    
+    let salineDrip = (performance.now() / 20) % 40;
+    ctx.fillStyle = '#0288D1'; ctx.beginPath(); ctx.arc(169, TOP_H - 215 + salineDrip, 3, 0, Math.PI*2); ctx.fill(); 
+    let bloodDrip = (performance.now() / 25) % 60;
+    ctx.fillStyle = '#B71C1C'; ctx.beginPath(); ctx.arc(201, TOP_H - 220 + bloodDrip, 2, 0, Math.PI*2); ctx.fill(); 
+
+    drawShadowRoundRect(60, TOP_H - 220, 100, 120, 15, '#90A4AE', '#546E7A', 3);
+    drawRoundRect(70, TOP_H - 210, 80, 60, 8, '#000');
+    
+    ctx.fillStyle = (Math.floor(performance.now() / 300) % 2 === 0) ? '#00E676' : '#1B5E20';
+    ctx.beginPath(); ctx.arc(140, TOP_H - 130, 5, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#FF5252';
+    ctx.beginPath(); ctx.arc(120, TOP_H - 130, 5, 0, Math.PI*2); ctx.fill();
+    
+    ctx.strokeStyle = '#00E676'; ctx.lineWidth = 2;
+    let offset = (performance.now() / 15) % 80;
+    ctx.beginPath();
+    ctx.moveTo(70, TOP_H - 170);
+    ctx.lineTo(70 + offset/2, TOP_H - 170);
+    ctx.lineTo(70 + offset/2 + 5, TOP_H - 185);
+    ctx.lineTo(70 + offset/2 + 10, TOP_H - 155);
+    ctx.lineTo(70 + offset/2 + 15, TOP_H - 170);
+    ctx.lineTo(150, TOP_H - 170);
+    ctx.stroke();
+
+    drawShadowRoundRect(CW - 320, TOP_H - 140, 120, 15, 8, '#ECEFF1', '#B0BEC5', 3); 
+    drawRoundRect(CW - 270, TOP_H - 125, 20, 30, 4, '#B0BEC5', '#90A4AE', 2); 
+    drawRoundRect(CW - 310, TOP_H - 145, 30, 6, 3, '#CFD8DC'); 
+    drawRoundRect(CW - 260, TOP_H - 145, 10, 6, 3, '#CFD8DC'); 
+}
+
+function drawPatientBlanket(x, y) {
+    drawShadowRoundRect(x - 240, y - 20, 100, 60, 20, '#FAFAFA', '#E0E0E0', 2);
+    
+    drawShadowRoundRect(x - 250, y + 20, 500, 60, 15, '#EEEEEE', COLORS.black, 6); 
+    drawRoundRect(x - 100, y + 80, 200, 30, 10, '#9E9E9E', COLORS.black, 4); 
+    drawRoundRect(x - 240, y + 80, 30, 30, 10, '#424242', '#000', 4);
+    drawRoundRect(x + 210, y + 80, 30, 30, 10, '#424242', '#000', 4);
+
+    let breath = Math.sin(performance.now() / 400) * 5;
+
+    ctx.fillStyle = '#EAC086'; 
+    ctx.beginPath(); ctx.arc(x - 190, y + 5, 25, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = '#5D4037'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x-200, y+5); ctx.quadraticCurveTo(x-195, y+10, x-190, y+5); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x-185, y+5); ctx.quadraticCurveTo(x-180, y+10, x-175, y+5); ctx.stroke();
+    ctx.fillStyle = '#00ACC1';
+    ctx.beginPath(); ctx.arc(x - 190, y, 26, Math.PI, 0); ctx.fill();
+
+    ctx.fillStyle = '#81D4FA'; 
+    ctx.strokeStyle = '#0288D1';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(x - 180, y + 20); 
+    ctx.quadraticCurveTo(x - 100, y - 60 - breath, x, y - 20 - breath); 
+    ctx.quadraticCurveTo(x + 100, y - 40, x + 160, y - 10); 
+    ctx.quadraticCurveTo(x + 220, y - 30, x + 250, y + 20); 
+    ctx.lineTo(x - 180, y + 20);
+    ctx.fill(); ctx.stroke();
+
+    ctx.strokeStyle = '#4FC3F7'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x - 130, y - 10 - breath*0.5); ctx.quadraticCurveTo(x - 110, y, x - 120, y + 20); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x + 80, y - 10); ctx.quadraticCurveTo(x + 60, y, x + 70, y + 20); ctx.stroke();
+}
+
+function drawArticulatedArm(startX, startY, targetX, targetY, isErratic, flipBend = false) {
+    let dx = targetX - startX;
+    let dy = targetY - startY;
+    
+    let bendDir = flipBend ? -1 : 1;
+    let elbowX = startX + dx * 0.4 + (bendDir * 80);
+    let elbowY = startY + dy * 0.7;
+
+    if (isErratic) {
+        elbowX += (Math.random() - 0.5) * 40;
+        elbowY += (Math.random() - 0.5) * 40;
+        targetX += (Math.random() - 0.5) * 20;
+        targetY += (Math.random() - 0.5) * 20;
+    }
+
+    ctx.lineWidth = 20;
+    ctx.strokeStyle = isErratic ? '#FF5252' : '#546E7A';
+    ctx.beginPath(); ctx.moveTo(startX, startY); ctx.lineTo(elbowX, elbowY); ctx.stroke();
+
+    ctx.lineWidth = 14;
+    ctx.strokeStyle = '#78909C';
+    ctx.beginPath(); ctx.moveTo(elbowX, elbowY); ctx.lineTo(targetX, targetY); ctx.stroke();
+
+    ctx.fillStyle = '#263238';
+    ctx.beginPath(); ctx.arc(startX, startY, 22, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#37474F';
+    ctx.beginPath(); ctx.arc(elbowX, elbowY, 16, 0, Math.PI*2); ctx.fill();
+    
+    ctx.fillStyle = isErratic ? '#FF1744' : '#00E676'; 
+    ctx.beginPath(); ctx.arc(elbowX, elbowY, 5, 0, Math.PI*2); ctx.fill();
+
+    ctx.fillStyle = '#ECEFF1';
+    ctx.beginPath(); ctx.arc(targetX, targetY, 12, 0, Math.PI*2); ctx.fill();
+    ctx.lineWidth = 3; ctx.strokeStyle = '#B0BEC5';
+    ctx.beginPath(); ctx.moveTo(targetX, targetY); ctx.lineTo(targetX, targetY + 25); ctx.stroke();
+}
+
+function drawOR(dt) {
+    drawHospitalBg();
+    drawPatientBlanket(CW/2, TOP_H - 140);
+
+    ctx.fillStyle = 'rgba(211, 47, 47, 0.85)';
+    GAME.bloodSpills.forEach(spill => {
+        ctx.beginPath();
+        ctx.arc(CW/2 + spill.x, TOP_H - 120 + spill.y, spill.r, 0, Math.PI * 2);
+        ctx.fill();
+    });
+
+    let speed = GAME.state === 'PLAYING' ? 400 : 2000;
+    let baseSway = Math.sin(performance.now() / speed) * 20;
+    let reachSway = Math.sin(performance.now() / (speed * 0.5)) * GAME.armReach;
+    let sway = baseSway + reachSway;
+    let sway2 = Math.cos(performance.now() / (speed * 0.8)) * (15 + GAME.armReach * 0.8);
+    let isErratic = GAME.armGlitchTimer > 0;
+
+    drawArticulatedArm(CW/2 - 350, -20, CW/2 - 200 + sway, TOP_H - 150, isErratic, true);
+    drawArticulatedArm(CW/2 - 150, -20, CW/2 - 100 + sway2, TOP_H - 160, isErratic, true);
+    drawArticulatedArm(CW/2 + 150, -20, CW/2 + 100 - sway2, TOP_H - 160, isErratic, false);
+    drawArticulatedArm(CW/2 + 350, -20, CW/2 + 200 - sway, TOP_H - 150, isErratic, false);
+
+    if (GAME.state === 'PLAYING' || GAME.state === 'RESOLUTION') {
+        drawRoundRect(CW/2 - 300, 15, 600, 80, 15, 'rgba(33,33,33,0.85)', null);
+        
+        let hx = CW/2 - 270;
+        for (let i = 0; i < GAME.maxHearts; i++) {
+            ctx.fillStyle = i < GAME.hearts ? COLORS.red : '#555';
+            drawText('❤', hx, 55, 36, ctx.fillStyle, 'left', 'rgba(0,0,0,0.5)', 3);
+            hx += 50;
+        }
+
+        const pct = Math.max(0, GAME.anesthesia / GAME.anesthesiaMax);
+        const barColor = pct > 0.5 ? COLORS.green : (pct > 0.2 ? COLORS.gold : COLORS.red);
+        drawRoundRect(CW/2 - 20, 35, 280, 40, 20, '#212121', null);
+        drawRoundRect(CW/2 - 15, 40, 270 * pct, 30, 15, barColor, null);
+        drawText("ANESTHESIA", CW/2, 55, 16, '#FFF', 'left', 'rgba(0,0,0,0.5)', 2);
+    } else {
+        drawRoundRect(CW/2 - 250, 30, 500, 50, 15, 'rgba(33,33,33,0.85)', null);
+        drawText("OR SYSTEM STANDBY", CW/2, 55, 20, COLORS.green, 'center');
+    }
+
+    drawRoundRect(20, 20, 225, 40, 20, 'rgba(0,0,0,0.6)', null);
+    drawText("LIVE HOSPITAL OR FEED", 55, 40, 14, '#FFF', 'left', null, 0);
+    if (Math.floor(performance.now() / 500) % 2 === 0) {
+        ctx.fillStyle = '#FF1744';
+        ctx.beginPath(); ctx.arc(38, 40, 6, 0, Math.PI*2); ctx.fill();
+    }
+}
+
+function drawScatteredPaper(x, y, rot, hasStamp, lines = 6) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rot);
+    drawShadowRoundRect(-40, -50, 80, 100, 4, 'rgba(250,250,250,0.95)', '#E0E0E0', 1);
+    ctx.strokeStyle = '#B0BEC5'; ctx.lineWidth = 2;
+    for(let i=0; i<lines; i++) { 
+        ctx.beginPath(); ctx.moveTo(-25, -25+i*14); ctx.lineTo(25, -25+i*14); ctx.stroke(); 
+    }
+    if (hasStamp) {
+        ctx.save();
+        ctx.translate(5, 10);
+        ctx.rotate(-0.3);
+        drawText("URGENT", 0, 0, 14, '#FF1744', 'center', null, 0);
+        ctx.strokeStyle = '#FF1744'; ctx.lineWidth = 1;
+        ctx.strokeRect(-28, -12, 56, 24);
+        ctx.restore();
+    }
+    ctx.restore();
+}
+
+function drawDesk(dt) {
+    drawRect(0, TOP_H, CW, BOT_H, COLORS.deskBg);
+    
+    ctx.strokeStyle = '#4E342E'; ctx.lineWidth = 3;
+    for(let i=0; i<3; i++) {
+        ctx.beginPath(); ctx.moveTo(0, TOP_H + 80 + i*100); 
+        ctx.quadraticCurveTo(CW/2, TOP_H + 110 + i*100, CW, TOP_H + 90 + i*100); ctx.stroke();
+    }
+    
+    drawScatteredPaper(160, TOP_H + 180, -0.1, true, 5); 
+    drawScatteredPaper(CW - 240, TOP_H + 130, 0.25, false, 6);  
+    drawScatteredPaper(CW - 220, TOP_H + 280, -0.15, true, 4); 
+    drawScatteredPaper(180, TOP_H + 320, 0.4, false, 6); 
+    drawScatteredPaper(100, TOP_H + 50, -0.15, false, 5); 
+    drawScatteredPaper(1080, TOP_H + 100, 0.1, true, 6); 
+    
+    ctx.save(); ctx.translate(CW/2 - 440, TOP_H + 300); ctx.rotate(-0.2); 
+    drawShadowRoundRect(-20, -20, 40, 40, 2, '#FFF59D', '#FBC02D', 1); ctx.restore(); 
+    ctx.save(); ctx.translate(CW/2 + 450, TOP_H + 250); ctx.rotate(0.3); 
+    drawShadowRoundRect(-20, -20, 40, 40, 2, '#F48FB1', '#D81B60', 1); ctx.restore(); 
+
+    const rx = 40; const ry = TOP_H + 90;
+    drawShadowRoundRect(rx, ry, 180, 60, 15, '#212121', '#111', 2); 
+    drawRoundRect(rx + 20, ry - 60, 12, 70, 6, '#424242', null); 
+    drawRoundRect(rx + 148, ry - 60, 12, 70, 6, '#424242', null); 
+    
+    ctx.fillStyle = '#111';
+    drawRoundRect(rx + 50, ry + 15, 80, 6, 3, '#111', null);
+    drawRoundRect(rx + 50, ry + 30, 80, 6, 3, '#111', null);
+    drawRoundRect(rx + 50, ry + 45, 80, 6, 3, '#111', null);
+    
+    let lightColor = '#00E676';
+    if (GAME.hazard === 'lag') lightColor = (Math.floor(performance.now() / 200) % 2 === 0) ? '#FF1744' : '#550000';
+    ctx.fillStyle = lightColor;
+    ctx.beginPath(); ctx.arc(rx + 25, ry + 30, 8, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(rx + 155, ry + 30, 8, 0, Math.PI*2); ctx.fill();
+    
+    if (GAME.routerFlashTimer > 0) {
+        ctx.fillStyle = `rgba(255, 255, 255, ${GAME.routerFlashTimer / 150})`;
+        ctx.roundRectPolyfill(rx, ry, 180, 60, 15); ctx.fill();
+    }
+
+    const mx = 60; const my = TOP_H + 240;
+    drawShadowRoundRect(mx, my, 80, 100, 10, '#FAFAFA', '#E0E0E0', 2); 
+    drawRoundRect(mx + 70, my + 20, 30, 60, 15, 'transparent', '#FAFAFA', 8); 
+    ctx.fillStyle = '#3E2723'; ctx.beginPath(); ctx.ellipse(mx + 40, my, 35, 10, 0, 0, Math.PI*2); ctx.fill(); 
+    
+    drawText("WORK-FROM-", mx + 40, my + 45, 12, '#424242', 'center', null, 0);
+    drawText("HOME IS", mx + 40, my + 60, 12, '#424242', 'center', null, 0);
+    drawText("THE BEST!", mx + 40, my + 75, 12, '#424242', 'center', null, 0);
+    
+    ctx.strokeStyle = '#E0E0E0'; ctx.lineWidth = 4;
+    let sOff = Math.sin(performance.now()/500)*8;
+    ctx.beginPath(); ctx.moveTo(mx + 30, my - 20); ctx.quadraticCurveTo(mx + 40 + sOff, my - 40, mx + 30, my - 60); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(mx + 50, my - 15); ctx.quadraticCurveTo(mx + 60 + sOff, my - 35, mx + 50, my - 55); ctx.stroke();
+
+    const px = CW - 160; const py = TOP_H + 60;
+    drawShadowRoundRect(px, py, 130, 260, 20, '#CFD8DC', '#B0BEC5', 3); 
+    drawRoundRect(px + 40, py + 15, 50, 6, 3, '#212121', null); 
+    drawRoundRect(px + 10, py + 35, 110, 200, 10, '#1E88E5', '#1565C0', 2); 
+    ctx.fillStyle='#212121'; ctx.beginPath(); ctx.arc(px + 65, py + 245, 8, 0, Math.PI*2); ctx.fill(); 
+    
+    drawText("12:00", px + 30, py + 45, 12, '#FFF', 'center', null, 0);
+    drawRoundRect(px + 95, py + 40, 16, 8, 2, '#FFF', null); 
+    
+    drawRoundRect(px + 15, py + 60, 100, 50, 12, '#1B5E20', null);
+    drawText("BANK", px + 65, py + 75, 14, '#C8E6C9', 'center', null, 0);
+    drawText("$" + GAME.cash, px + 65, py + 95, 20, '#FFF', 'center', 'rgba(0,0,0,0.5)', 2);
+    
+    let activeApps = [];
+    if (GAME.upgrades.keyboard) activeApps.push('⌨️');
+    if (GAME.upgrades.ethernet) activeApps.push('🔌');
+    if (GAME.upgrades.treats) activeApps.push('🐟');
+    if (GAME.upgrades.lawyer) activeApps.push('💼');
+    if (GAME.upgrades.energy) activeApps.push('🔋');
+    if (GAME.upgrades.mugLid) activeApps.push('☕');
+    if (GAME.upgrades.adBlock) activeApps.push('🛑');
+    if (GAME.upgrades.powerBank) activeApps.push('⚡');
+    
+    for (let i = 0; i < activeApps.length; i++) {
+        let ax = px + 14 + (i % 3) * 30;
+        let ay = py + 120 + Math.floor(i / 3) * 35;
+        drawRoundRect(ax, ay, 24, 24, 6, '#455A64', null);
+        drawText(activeApps[i], ax + 12, ay + 13, 14, '#FFF', 'center', null, 0); 
+    }
+
+    function drawXPTaskbar(lx, ly) {
+        const tbY = ly + 230;
+        let xpGrd = ctx.createLinearGradient(0, tbY, 0, tbY + 30);
+        xpGrd.addColorStop(0, '#245EDC');
+        xpGrd.addColorStop(1, '#113296');
+        ctx.fillStyle = xpGrd;
+        ctx.fillRect(lx + 20, tbY, 760, 30);
+        
+        let startGrd = ctx.createLinearGradient(lx + 20, tbY, lx + 20, tbY + 30);
+        startGrd.addColorStop(0, '#429C42');
+        startGrd.addColorStop(1, '#276E27');
+        ctx.fillStyle = startGrd;
+        ctx.beginPath();
+        ctx.roundRectPolyfill(lx + 20, tbY, 100, 30, 0); 
+        ctx.fill();
+        ctx.beginPath(); ctx.moveTo(lx+20, tbY); ctx.lineTo(lx+105, tbY); ctx.quadraticCurveTo(lx+120, tbY+15, lx+105, tbY+30); ctx.lineTo(lx+20, tbY+30); ctx.fill();
+        drawText("start", lx + 65, tbY + 15, 20, '#FFF', 'center', '#000', 1);
+        
+        ctx.fillStyle = '#0B53D1';
+        ctx.fillRect(lx + 680, tbY, 100, 30);
+        drawText("12:00 PM", lx + 730, tbY + 15, 14, '#FFF', 'center');
+    }
+
+    const lx = CW/2 - 400; 
+    const ly = TOP_H + 20;
+    
+    drawShadowRoundRect(lx, ly + BOT_H - 80, 800, 120, 20, '#424242', '#212121', 4);
+    drawRoundRect(CW/2 - 60, ly + BOT_H - 30, 120, 50, 10, '#37474F', '#212121', 2); 
+    
+    drawRoundRect(lx + 20, ly + BOT_H - 70, 760, 80, 8, '#263238', null);
+    ctx.fillStyle = '#111'; 
+    for(let r=0; r<4; r++) {
+        for(let c=0; c<22; c++) {
+            drawRoundRect(lx + 25 + (c*34.2), ly + BOT_H - 65 + (r*18), 30, 14, 4, '#111', null);
+        }
+    }
+    drawRoundRect(CW/2 - 80, ly + BOT_H - 65 + (3*18), 160, 14, 4, '#111', null); 
+
+    drawRoundRect(lx, ly, 800, BOT_H - 80, 15, COLORS.laptopBezel, '#111', 4);
+    ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(CW/2, ly + 10, 4, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#4FC3F7'; ctx.beginPath(); ctx.arc(CW/2 + 1, ly + 9, 1.5, 0, Math.PI*2); ctx.fill(); 
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRectPolyfill(lx + 20, ly + 20, 760, BOT_H - 120, 10); 
+    ctx.clip();
+    
+    ctx.fillStyle = COLORS.laptopScreen;
+    ctx.fill();
+    
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)'; ctx.lineWidth = 1;
+    for(let i = lx + 20; i < lx + 780; i += 40) { ctx.beginPath(); ctx.moveTo(i, ly + 20); ctx.lineTo(i, ly + 260); ctx.stroke(); }
+    for(let i = ly + 20; i < ly + 260; i += 40) { ctx.beginPath(); ctx.moveTo(lx + 20, i); ctx.lineTo(lx + 780, i); ctx.stroke(); }
+    
+    if (GAME.state === 'MENU') {
+        drawText("WORK-FROM-HOME SURGERY", CW/2, ly + 60, 42, COLORS.white, 'center', 'rgba(0,0,0,0.5)', 3);
+        const bx1 = lx + 120, bx2 = lx + 310, bx3 = lx + 500, by = ly + 110;
+        
+        drawButton("START", bx1, by, 160, 60, COLORS.green, 24, true); 
+        drawButton("DARK WEB", bx2, by, 160, 60, '#9C27B0', 24);
+        drawButton("HELP", bx3, by, 160, 60, '#1565C0', 24);
+        drawText("Vibe coded by Michael at Tinker Studio", CW/2, ly + 200, 16, '#90A4AE', 'center');
+        
+        drawXPTaskbar(lx, ly);
+    }
+    else if (GAME.state === 'STORE') drawLaptopStore(lx, ly, drawXPTaskbar);
+    else if (GAME.state === 'PLAYING') drawLaptopPlaying(lx, ly);
+    else if (GAME.state === 'RESOLUTION') drawLaptopResolution(lx, ly, drawXPTaskbar);
+    
+    if (GAME.hazard === 'ad') drawHazards(true);
+
+    if (GAME.greenFlashTimer > 0) {
+        ctx.fillStyle = `rgba(0, 230, 118, ${Math.min(0.6, GAME.greenFlashTimer / 150)})`;
+        ctx.fillRect(lx + 20, ly + 20, 760, BOT_H - 120);
+    }
+
+    ctx.restore(); 
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
+    ctx.beginPath(); ctx.moveTo(lx+20, ly+20); ctx.lineTo(lx+780, ly+20); ctx.lineTo(lx+20, ly+BOT_H-100); ctx.fill();
+
+    drawHazards(false);
+    drawHazardTextOverlay(lx, ly);
+}
+
+function drawLaptopPlaying(lx, ly) {
+    drawRoundRect(lx + 30, ly + 30, 740, 50, 15, 'rgba(0,0,0,0.3)', null);
+    drawText(GAME.flavorText, CW/2, ly + 55, 22, '#FFF', 'center', 'rgba(0,0,0,0.5)', 2);
+
+    drawText(`Rank: ${getRankName(GAME.rank)} | Phase: ${GAME.phasesCompleted}/${GAME.phasesNeeded}`, CW/2, ly + 100, 20, '#FFF', 'center', null, 0);
+
+    const sqW = 70;
+    const sqGap = 10;
+    const totalW = (GAME.sequence.length * sqW) + ((GAME.sequence.length - 1) * sqGap);
+    let sx = CW/2 - totalW/2;
+    
+    for (let i = 0; i < GAME.sequence.length; i++) {
+        let bg = COLORS.white;
+        let txt = COLORS.black;
+        let scale = 1;
+        
+        if (i < GAME.currentIndex) {
+            bg = COLORS.green; 
+        } else if (i === GAME.currentIndex) {
+            bg = COLORS.gold; 
+            scale = 1 + Math.sin(performance.now() / 100) * 0.1; 
+        }
+        
+        if (i === GAME.currentIndex - 1 && GAME.arrowPopTimer > 0) {
+            scale = 1 + (GAME.arrowPopTimer / 100) * 0.25; 
+        }
+
+        if (GAME.hazard === 'lag') {
+            bg = COLORS.gray; txt = '#E0E0E0';
+        }
+        
+        let actW = sqW * scale;
+        let actX = sx + (sqW - actW) / 2;
+        let actY = ly + 130 + (sqW - actW) / 2;
+
+        drawShadowRoundRect(actX, actY, actW, actW, 12, bg, null, 0);
+        drawText(ARROW_SYM[GAME.sequence[i]], sx + sqW/2, ly + 130 + sqW/2, 45 * scale, txt, 'center', null, 0);
+        sx += sqW + sqGap;
+    }
+
+    const pPct = Math.max(0, GAME.phaseTimer / GAME.phaseTimerMax);
+    drawRoundRect(lx + 60, ly + 215, 680, 20, 10, '#000', COLORS.white, 3);
+    drawRoundRect(lx + 64, ly + 219, 672 * pPct, 12, 6, COLORS.red, null);
+
+    if (GAME.hazard) {
+        let alpha = 0.85;
+        ctx.fillStyle = `rgba(0,0,0,${alpha})`;
+        ctx.beginPath();
+        ctx.roundRectPolyfill(lx + 20, ly + 20, 760, BOT_H - 120, 10);
+        ctx.fill();
+    }
+}
+
+function drawHazardTextOverlay(lx, ly) {
+    if (!GAME.hazard || GAME.hazard === 'ad') return; 
+    
+    let title = "";
+    let sub = "";
+    let col = COLORS.red;
+    let titleY = ly + 70; 
+    let subY = ly + 110;
+
+    if (GAME.hazard === 'cat') {
+        title = "SHOO THE CAT AWAY!";
+        sub = `Click the cat ${3 - GAME.catClicks} more times!`;
+        col = '#FFA000';
+        titleY = ly + 45; 
+        subY = ly + 85;
+    } else if (GAME.hazard === 'battery') {
+        title = "BATTERY LOW!";
+        sub = "Drag the charger plug to the wall outlet!";
+        titleY = ly + 70;
+        subY = ly + 110;
+    } else if (GAME.hazard === 'lag') {
+        title = "WI-FI DISCONNECTED!";
+        sub = `Click the router ${3 - GAME.routerClicks} more times!`;
+    } else if (GAME.hazard === 'coffee') {
+        title = "COFFEE SPILLED!";
+        sub = "Drag your mouse wildly over the spill to wipe it!";
+        col = '#D7CCC8';
+        titleY = ly + 45;
+        subY = ly + 85;
+    }
+
+    let scale = 1 + Math.sin(performance.now() / 150) * 0.05;
+    ctx.save();
+    ctx.translate(CW/2, titleY);
+    ctx.scale(scale, scale);
+    drawText(title, 0, 0, 48, col, 'center', '#000', 4);
+    ctx.restore();
+    
+    drawText(sub, CW/2, subY, 20, '#FFF', 'center', '#000', 2);
+}
+
+function drawHelpModal() {
+    ctx.fillStyle = 'rgba(0,0,0,0.8)';
+    ctx.fillRect(0, 0, CW, CH);
+    
+    const mx = CW/2 - 350;
+    const my = CH/2 - 310; 
+    drawShadowRoundRect(mx, my, 700, 620, 20, COLORS.uiBg, '#B0BEC5', 4); 
+    
+    drawText("HELP", CW/2, my + 50, 36, COLORS.uiDark, 'center');
+    drawButton("X", mx + 630, my + 15, 50, 50, COLORS.red, 24);
+    
+    drawText("HOW TO PLAY:", mx + 50, my + 105, 24, '#1565C0', 'left', null, 0);
+    
+    const textX = mx + 75;
+    const bulletX = mx + 50;
+
+    // Bullet 1
+    drawText("•", bulletX, my + 155, 20, COLORS.black, 'left');
+    drawText("Press the arrow keys in order before the red meter runs out.", textX, my + 155, 20, COLORS.black, 'left');
+    
+    // Bullet 2
+    drawText("•", bulletX, my + 205, 20, COLORS.black, 'left');
+    drawText("Finish all sequences before the top Anesthesia bar empties", textX, my + 205, 20, COLORS.black, 'left');
+    drawText("to complete the operation and increase your rank.", textX, my + 235, 20, COLORS.black, 'left');
+    
+    // Bullet 3
+    drawText("•", bulletX, my + 285, 20, COLORS.black, 'left');
+    drawText("Pressing the wrong key or letting the red meter empty", textX, my + 285, 20, COLORS.black, 'left');
+    drawText("costs one heart.", textX, my + 315, 20, COLORS.black, 'left');
+    
+    // Bullet 4
+    drawText("•", bulletX, my + 365, 20, COLORS.red, 'left');
+    drawText("Lose all your hearts, and it's game over!", textX, my + 365, 20, COLORS.red, 'left');
+    
+    // Bullet 5
+    drawText("•", bulletX, my + 415, 20, '#1B5E20', 'left');
+    drawText("Complete 3 sequences flawlessly in a row to earn a bonus heart.", textX, my + 415, 20, '#1B5E20', 'left');
+    
+    // Bullet 6
+    drawText("•", bulletX, my + 465, 20, COLORS.black, 'left');
+    drawText("Deal with classic work-from-home problems such as an", textX, my + 465, 20, COLORS.black, 'left');
+    drawText("annoying cat, loss of Wi-Fi, and more!", textX, my + 495, 20, COLORS.black, 'left');
+    
+    const btnText = GAME.pendingStart ? "START OPERATION" : "CLOSE";
+    drawButton(btnText, CW/2 - 110, my + 545, 220, 50, GAME.pendingStart ? COLORS.green : COLORS.gray, 20, GAME.pendingStart);
+}
+
+function drawLaptopStore(lx, ly, drawXPTaskbar) {
+    drawRoundRect(lx + 30, ly + 25, 740, 50, 12, 'rgba(0,0,0,0.3)', null);
+    drawButton("BACK", lx + 40, ly + 30, 80, 40, COLORS.gray, 18);
+    drawText("DARK WEB SURGERY STORE", lx + 140, ly + 50, 28, '#FFF', 'left', 'rgba(0,0,0,0.5)', 2);
+
+    const maxPage = Math.ceil(STORE_ITEMS.length / 4) - 1;
+    if (GAME.storePage > 0) drawButton("<", lx + 600, ly + 30, 40, 40, '#1565C0', 20);
+    drawText(`Pg ${GAME.storePage + 1}`, lx + 675, ly + 50, 18, '#FFF', 'center');
+    if (GAME.storePage < maxPage) drawButton(">", lx + 710, ly + 30, 40, 40, '#1565C0', 20);
+
+    const pageItems = STORE_ITEMS.slice(GAME.storePage * 4, GAME.storePage * 4 + 4);
+    pageItems.forEach((item, i) => {
+        const col = i % 2;
+        const row = Math.floor(i / 2);
+        const ix = lx + 40 + (col * 365);
+        const iy = ly + 80 + (row * 65); 
+        
+        drawShadowRoundRect(ix, iy, 345, 60, 15, '#16213E', '#0F3460', 3);
+        drawText(item.icon, ix + 35, iy + 30, 32, '#FFF', 'center', null, 0);
+        drawText(item.title, ix + 75, iy + 20, 18, COLORS.white, 'left', null, 0);
+        drawText(item.desc, ix + 75, iy + 45, 13, '#B0BEC5', 'left', null, 0);
+        
+        const isMax = item.consumable && GAME.hearts >= GAME.maxHearts;
+        const owned = !item.consumable && GAME.upgrades[item.id];
+        const btnColor = (owned || isMax) ? COLORS.gray : (GAME.cash >= item.price ? COLORS.green : COLORS.red);
+        const btnText = owned ? "EQUIPPED" : (isMax ? "FULL" : `$${item.price}`);
+        
+        drawButton(btnText, ix + 245, iy + 15, 90, 30, btnColor, 14);
+    });
+
+    drawXPTaskbar(lx, ly);
+}
+
+function drawLaptopResolution(lx, ly, drawXPTaskbar) {
+    const bg = GAME.lastResult === 'WIN' ? '#1B5E20' : '#B71C1C';
+    drawRoundRect(lx + 30, ly + 30, 740, 190, 15, bg, null);
+    
+    if (GAME.showQuitConfirm) {
+        drawShadowRoundRect(lx + 200, ly + 60, 400, 150, 15, '#212121', '#FFF', 3);
+        drawText("ARE YOU SURE?", CW/2, ly + 95, 28, COLORS.red, 'center', null, 0);
+        drawText("Quitting resets progress.", CW/2, ly + 125, 20, COLORS.white, 'center', null, 0);
+        drawButton("YES", lx + 220, ly + 140, 160, 50, COLORS.red, 20);
+        drawButton("NO", lx + 420, ly + 140, 160, 50, COLORS.gray, 20);
+        drawXPTaskbar(lx, ly);
+        return;
+    }
+
+    let title = GAME.lastResult === 'WIN' ? "OPERATION SUCCESS" : 
+                (GAME.lastResult === 'AWAKE' ? "PATIENT WOKE UP" : "MALPRACTICE LAWSUIT");
+                
+    drawText(title, CW/2, ly + 70, 38, COLORS.white, 'center', 'rgba(0,0,0,0.5)', 3);
+    
+    if (GAME.lastResult === 'WIN') {
+        drawText(`BASE: +$${200 + (GAME.rank * 100)} | HEARTS: +$${GAME.hearts * (50 + GAME.rank * 10)} | SPEED: +$${Math.floor((GAME.anesthesia/1000)*10)}`, CW/2, ly + 110, 18, COLORS.gold, 'center', null, 0);
+        drawText(`TOTAL PAYOUT: $${GAME.payout}`, CW/2, ly + 145, 32, COLORS.green, 'center', 'rgba(0,0,0,0.5)', 2);
+        
+        drawButton("NEXT OP", lx + 70, ly + 170, 200, 50, COLORS.green, 20, true);
+        drawButton("DARK WEB", lx + 300, ly + 170, 200, 50, '#9C27B0', 20);
+        drawButton("QUIT", lx + 530, ly + 170, 200, 50, COLORS.red, 20);
+    } else {
+        const baseCost = (GAME.rank + 1) * 300;
+        const cost = Math.max(baseCost, Math.floor(GAME.cash * 0.75));
+        const canAfford = GAME.cash >= cost;
+        drawText("YOU HAVE BEEN FIRED.", CW/2, ly + 110, 28, '#FFF', 'center', null, 0);
+        drawText("PAYOUT: $0", CW/2, ly + 145, 28, '#9E9E9E', 'center', null, 0);
+        
+        drawButton(`RETRY (-$${cost})`, lx + 70, ly + 170, 200, 50, canAfford ? COLORS.gold : COLORS.gray, 18, canAfford);
+        drawButton("DARK WEB", lx + 300, ly + 170, 200, 50, '#9C27B0', 20);
+        drawButton("QUIT", lx + 530, ly + 170, 200, 50, COLORS.red, 20);
+    }
+
+    drawXPTaskbar(lx, ly);
+}
+
+function drawHazards(isClipped) {
+    if (!GAME.hazard) return;
+    const lx = CW/2 - 400;
+    const ly = TOP_H + 40;
+
+    if (isClipped) {
+        if (GAME.hazard === 'ad') {
+            const {x, y, w, h} = GAME.adPos;
+            drawShadowRoundRect(x, y, w, h, 15, COLORS.uiBg, COLORS.uiDark, 4);
+            drawRoundRect(x, y, w, 40, 15, '#1565C0', null);
+            drawRect(x, y + 20, w, 20, '#1565C0'); 
+            drawText("URGENT MESSAGE", x + 15, y + 20, 18, '#FFF', 'left', null, 0);
+            
+            drawRoundRect(x + w - 35, y + 5, 30, 30, 8, COLORS.red, null);
+            drawText("X", x + w - 20, y + 20, 18, '#FFF', 'center', null, 0);
+            
+            drawText("TPS REPORTS ARE DUE.", x + w/2, y + 75, 22, '#000', 'center', null, 0);
+            drawText("IGNORE SURGERY.", x + w/2, y + 105, 22, '#000', 'center', null, 0);
+            drawText("Click red 'X' or press ESC.", x + w/2, y + 145, 16, '#555', 'center', null, 0);
+        }
+        return; 
+    }
+
+    if (GAME.hazard === 'cat') {
+        const cx = CW/2; const cy = TOP_H + BOT_H/2;
+        drawShadowRoundRect(cx - 150, cy - 120, 300, 240, 120, '#FFA000', '#E65100', 6);
+        ctx.fillStyle = '#FFA000'; ctx.strokeStyle = '#E65100'; ctx.lineWidth = 6;
+        ctx.beginPath(); ctx.moveTo(cx - 120, cy - 80); ctx.lineTo(cx - 160, cy - 200); ctx.lineTo(cx - 40, cy - 100); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#FFCDD2'; ctx.beginPath(); ctx.moveTo(cx - 110, cy - 90); ctx.lineTo(cx - 145, cy - 180); ctx.lineTo(cx - 60, cy - 105); ctx.fill();
+        ctx.fillStyle = '#FFA000'; ctx.strokeStyle = '#E65100';
+        ctx.beginPath(); ctx.moveTo(cx + 120, cy - 80); ctx.lineTo(cx + 160, cy - 200); ctx.lineTo(cx + 40, cy - 100); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#FFCDD2'; ctx.beginPath(); ctx.moveTo(cx + 110, cy - 90); ctx.lineTo(cx + 145, cy - 180); ctx.lineTo(cx + 60, cy - 105); ctx.fill();
+
+        ctx.fillStyle = '#FFF'; ctx.strokeStyle = '#000'; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.ellipse(cx - 60, cy - 20, 30, 40, 0, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(cx + 60, cy - 20, 30, 40, 0, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#000';
+        ctx.beginPath(); ctx.ellipse(cx - 60, cy - 20, 10, 25, 0, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(cx + 60, cy - 20, 10, 25, 0, 0, Math.PI*2); ctx.fill();
+
+        ctx.fillStyle = '#F48FB1';
+        ctx.beginPath(); ctx.moveTo(cx - 15, cy + 30); ctx.lineTo(cx + 15, cy + 30); ctx.lineTo(cx, cy + 45); ctx.fill();
+
+        ctx.strokeStyle = '#000'; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.moveTo(cx, cy + 45); ctx.lineTo(cx, cy + 60); ctx.stroke();
+        ctx.beginPath(); ctx.arc(cx - 20, cy + 60, 20, 0, Math.PI); ctx.stroke();
+        ctx.beginPath(); ctx.arc(cx + 20, cy + 60, 20, 0, Math.PI); ctx.stroke();
+
+        ctx.strokeStyle = '#FFF'; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.moveTo(cx - 40, cy + 30); ctx.lineTo(cx - 120, cy + 10); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx - 40, cy + 40); ctx.lineTo(cx - 130, cy + 40); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx - 40, cy + 50); ctx.lineTo(cx - 120, cy + 70); ctx.stroke();
+
+        ctx.beginPath(); ctx.moveTo(cx + 40, cy + 30); ctx.lineTo(cx + 120, cy + 10); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx + 40, cy + 40); ctx.lineTo(cx + 130, cy + 40); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx + 40, cy + 50); ctx.lineTo(cx + 120, cy + 70); ctx.stroke();
+
+        drawShadowRoundRect(cx - 120, cy + 80, 80, 80, 40, '#FFA000', '#E65100', 4);
+        drawShadowRoundRect(cx + 40, cy + 80, 80, 80, 40, '#FFA000', '#E65100', 4);
+    }
+    else if (GAME.hazard === 'coffee') {
+        ctx.fillStyle = '#4E342E';
+        const s = Math.max(0, 300 - (GAME.coffeeWipe / 7));
+        ctx.beginPath(); ctx.arc(CW/2, ly + 160, s/2, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(CW/2 - s*0.6, ly + 170, s*0.4, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(CW/2 + s*0.5, ly + 150, s*0.45, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(CW/2 - s*0.3, ly + 110, s*0.35, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(CW/2 + s*0.3, ly + 210, s*0.35, 0, Math.PI*2); ctx.fill();
+    }
+    else if (GAME.hazard === 'battery') {
+        drawShadowRoundRect(GAME.socketPos.x - 60, GAME.socketPos.y - 60, 120, 120, 15, '#FAFAFA', '#B0BEC5', 4);
+        drawRoundRect(GAME.socketPos.x - 25, GAME.socketPos.y - 15, 15, 30, 5, '#212121', null);
+        drawRoundRect(GAME.socketPos.x + 10, GAME.socketPos.y - 15, 15, 30, 5, '#212121', null);
+        
+        ctx.lineWidth = 18;
+        ctx.strokeStyle = '#212121';
+        ctx.beginPath();
+        ctx.moveTo(CW/2, CH); 
+        ctx.quadraticCurveTo(CW/2, GAME.plugPos.y + 100, GAME.plugPos.x, GAME.plugPos.y);
+        ctx.stroke();
+        
+        drawShadowRoundRect(GAME.plugPos.x - 30, GAME.plugPos.y - 40, 60, 80, 10, '#424242', '#212121', 4);
+        drawRoundRect(GAME.plugPos.x - 15, GAME.plugPos.y - 65, 8, 30, 3, '#E0E0E0', null);
+        drawRoundRect(GAME.plugPos.x + 7, GAME.plugPos.y - 65, 8, 30, 3, '#E0E0E0', null);
+    }
+}
+
+let lastTime = performance.now();
+
+function loop(timestamp) {
+    const dt = timestamp - lastTime;
+    lastTime = timestamp;
+
+    ctx.clearRect(0, 0, CW, CH);
+
+    if (GAME.state === 'PLAYING') {
+        GAME.anesthesia -= dt;
+        GAME.phaseTimer -= dt;
+        GAME.hazardTimer += dt;
+        if (GAME.routerFlashTimer > 0) GAME.routerFlashTimer -= dt;
+        
+        if (GAME.armReach > 0) {
+            GAME.armReach = Math.max(0, GAME.armReach - dt * 0.2); 
+        }
+        if (GAME.armGlitchTimer > 0) GAME.armGlitchTimer -= dt;
+
+        if (GAME.inputBuffer.length > 0 && timestamp >= GAME.inputBuffer[0].time) {
+            const input = GAME.inputBuffer.shift();
+            processArrow(input.code);
+        }
+
+        if (GAME.hazard === 'battery') GAME.dimLevel = Math.min(0.95, GAME.dimLevel + (dt * 0.0001)); 
+
+        if (GAME.anesthesia <= 0) triggerResolution('AWAKE');
+        if (GAME.phaseTimer <= 0) {
+            GAME.hearts--;
+            GAME.redFlashTimer = 150;
+            GAME.shakeTimer = 300; 
+            GAME.perfectStreak = 0;
+            GAME.phaseTimer = GAME.phaseTimerMax;
+            
+            GAME.armGlitchTimer = 800;
+            for(let b=0; b<15; b++) {
+                GAME.bloodSpills.push({ x: (Math.random() * 300) - 150, y: (Math.random() * 60) - 30, r: Math.random() * 25 + 10 });
+            }
+            
+            if (GAME.hearts <= 0) triggerResolution('MALPRACTICE');
+        }
+        
+        if (GAME.state === 'PLAYING' && !GAME.hazard && GAME.hazardTimer > GAME.hazardNextSpawn) {
+            spawnHazard();
+            GAME.hazardTimer = 0;
+        }
+    }
+    
+    if (GAME.arrowPopTimer > 0) GAME.arrowPopTimer -= dt;
+    if (GAME.greenFlashTimer > 0) GAME.greenFlashTimer -= dt;
+    
+    let shakeX = 0; let shakeY = 0;
+    if (GAME.shakeTimer > 0) {
+        GAME.shakeTimer -= dt;
+        shakeX = (Math.random() - 0.5) * 15 * (GAME.shakeTimer / 300);
+        shakeY = (Math.random() - 0.5) * 15 * (GAME.shakeTimer / 300);
+    }
+
+    ctx.save();
+    if (GAME.shakeTimer > 0) ctx.translate(shakeX, shakeY);
+
+    drawOR(dt);
+
+    // Apply dimming over the hospital area when out of the action!
+    if (GAME.state === 'MENU' || GAME.state === 'STORE') {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+        ctx.fillRect(0, 0, CW, TOP_H);
+    }
+
+    drawRect(0, TOP_H - 8, CW, 16, '#212121', '#000', 4); 
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillRect(0, TOP_H + 8, CW, 16); 
+    drawDesk(dt);
+
+    if (GAME.state === 'HELP') drawHelpModal();
+
+    if (GAME.redFlashTimer > 0) {
+        GAME.redFlashTimer -= dt;
+        ctx.fillStyle = `rgba(255, 0, 0, ${Math.min(1, GAME.redFlashTimer / 150)})`;
+        ctx.fillRect(0, 0, CW, CH);
+    }
+    
+    ctx.restore(); 
+
+    ctx.fillStyle = '#FFF';
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(GAME.mouseX, GAME.mouseY);
+    ctx.lineTo(GAME.mouseX + 16, GAME.mouseY + 16);
+    ctx.lineTo(GAME.mouseX + 7, GAME.mouseY + 18);
+    ctx.lineTo(GAME.mouseX, GAME.mouseY + 28);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+
+    requestAnimationFrame(loop);
+}
+
+requestAnimationFrame(loop);
+
+</script>
+</body>
+</html>
