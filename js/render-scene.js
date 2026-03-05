@@ -261,33 +261,91 @@ function drawORScene() {
     ctx.setLineDash([4, 4]);
     ctx.beginPath();
     ctx.moveTo(hmx + 47, hmy + 44);
-    ctx.quadraticCurveTo(lx - 80, M.sy + M.orH * 0.35, lx - 30, orBot - 55);
+    ctx.quadraticCurveTo(lx - 80, M.sy + M.orH * 0.35, lx - 30, M.sy + M.orH * 0.55);
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Patient — BIGGER, higher position
-    drawPatient(lx, orBot - 45);
+    // === ROLLING DRAWER CART (left side) ===
+    const drawerX = M.sx + 18, drawerBaseY = orBot - 78;
+    drawRoundRect(drawerX, drawerBaseY, 60, 68, 6, '#546E7A', '#455A64', 2);
+    for (let d = 0; d < 3; d++) {
+        drawRoundRect(drawerX+4, drawerBaseY+4+d*20, 52, 16, 3, '#607D8B', '#546E7A', 1);
+        drawRoundRect(drawerX+22, drawerBaseY+9+d*20, 16, 6, 2, '#78909C', null);
+    }
+    ctx.fillStyle = '#333';
+    ctx.beginPath(); ctx.arc(drawerX+10, drawerBaseY+72, 4, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(drawerX+50, drawerBaseY+72, 4, 0, Math.PI*2); ctx.fill();
+
+    // === MEDICINE CABINET (left wall, below glass cabinet) ===
+    const medCabX = M.sx + 8, medCabY = cabY + cabH + 8;
+    drawRoundRect(medCabX, medCabY, 70, 50, 4, '#ECEFF1', '#B0BEC5', 1);
+    ctx.strokeStyle = '#B0BEC5'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(medCabX+35, medCabY+4); ctx.lineTo(medCabX+35, medCabY+46); ctx.stroke();
+    drawRoundRect(medCabX+14, medCabY+20, 8, 10, 2, '#90A4AE', null);
+    drawRoundRect(medCabX+48, medCabY+20, 8, 10, 2, '#90A4AE', null);
+
+    // === WASTE BIN (right side, floor) ===
+    const binX = M.sx + M.sw - 55, binY = orBot - 42;
+    ctx.fillStyle = '#78909C'; ctx.strokeStyle = '#546E7A'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(binX, binY); ctx.lineTo(binX-4, binY+38); ctx.lineTo(binX+40, binY+38); ctx.lineTo(binX+36, binY); ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    drawRoundRect(binX-2, binY-4, 40, 6, 2, '#607D8B', '#455A64', 1);
+
+    // === X-RAY LIGHTBOX (wall) ===
+    const xrayX = M.sx + M.sw/2 - 180, xrayY = M.sy + 10;
+    drawRoundRect(xrayX, xrayY, 55, 40, 4, '#263238', '#37474F', 2);
+    drawRoundRect(xrayX+4, xrayY+4, 47, 28, 2, '#1A237E', null);
+    ctx.strokeStyle = 'rgba(100,181,246,0.4)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(xrayX+15, xrayY+10); ctx.lineTo(xrayX+15, xrayY+28); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(xrayX+10, xrayY+18); ctx.lineTo(xrayX+20, xrayY+18); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(xrayX+35, xrayY+18, 8, 10, 0, 0, Math.PI*2); ctx.stroke();
+
+    // === OXYGEN TANK (next to IV pole) ===
+    const o2X = ivX + 28, o2Y = orBot - 65;
+    drawRoundRect(o2X, o2Y, 16, 58, 8, '#42A5F5', '#1E88E5', 2);
+    drawRoundRect(o2X+3, o2Y-7, 10, 10, 3, '#78909C', '#546E7A', 1);
+    drawText('O2', o2X+8, o2Y+30, 9, '#FFF', 'center', null, 0, 'normal');
+
+    // === SUPPLY SHELF (right wall, near floor) ===
+    const shelfX = M.sx + M.sw - 95, shelfY = orBot - 35;
+    drawRoundRect(shelfX, shelfY, 35, 8, 2, '#B0BEC5', '#90A4AE', 1);
+    drawRoundRect(shelfX+4, shelfY-14, 12, 14, 2, '#E8F5E9', null);
+    drawRoundRect(shelfX+18, shelfY-12, 12, 12, 2, '#E3F2FD', null);
+
+    // === CLIPBOARD on wall (near heart monitor) ===
+    const clipX = hmx + 100, clipY = M.sy + 18;
+    drawRoundRect(clipX, clipY, 30, 40, 3, '#EFEBE9', '#BCAAA4', 1);
+    drawRoundRect(clipX+8, clipY-4, 14, 8, 2, '#8D6E63', null);
+    ctx.strokeStyle = '#BCAAA4'; ctx.lineWidth = 1;
+    for (let cl = 0; cl < 4; cl++) { ctx.beginPath(); ctx.moveTo(clipX+6, clipY+10+cl*7); ctx.lineTo(clipX+24, clipY+10+cl*7); ctx.stroke(); }
+
+    // Patient — centered vertically in OR area, bigger
+    const patientY = M.sy + M.orH * 0.55;
+    drawPatient(lx, patientY);
 
     // Blood
     ctx.fillStyle = 'rgba(211,47,47,0.8)';
-    GAME.bloodSpills.forEach(s => { ctx.beginPath(); ctx.arc(lx+s.x*0.8, orBot-45+s.y, s.r*0.8, 0, Math.PI*2); ctx.fill(); });
+    GAME.bloodSpills.forEach(s => { ctx.beginPath(); ctx.arc(lx+s.x*0.8, patientY+s.y, s.r*0.8, 0, Math.PI*2); ctx.fill(); });
 
-    // Arms — more movement with increased sway
-    let speed = GAME.state==='PLAYING' ? 400 : 2000;
-    let sway = Math.sin(performance.now()/speed)*20 + Math.sin(performance.now()/(speed*0.5))*GAME.armReach*1.0;
-    let sway2 = Math.cos(performance.now()/(speed*0.8))*(15+GAME.armReach*0.9);
+    // Arms — constrained to patient body area
+    let speed = GAME.state==='PLAYING' ? 600 : 2000;
+    let sway = Math.sin(performance.now()/speed)*12 + Math.sin(performance.now()/(speed*0.7))*GAME.armReach*0.4;
+    let sway2 = Math.cos(performance.now()/(speed*0.8))*(8+GAME.armReach*0.35);
     let erratic = GAME.armGlitchTimer > 0;
+    const armMinX = lx - 180, armMaxX = lx + 180;
+    const armTargetY = patientY - 15;
+    const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
     if (erratic) {
         ctx.globalAlpha = 0.15;
-        drawArm(M.sx+80, M.sy-10, lx-100+sway*1.5, orBot-40, true, true);
-        drawArm(M.sx+M.sw-80, M.sy-10, lx+100-sway*1.5, orBot-40, true, false);
+        drawArm(M.sx+80, M.sy-10, clamp(lx-80+sway*1.2, armMinX, armMaxX), armTargetY, true, true);
+        drawArm(M.sx+M.sw-80, M.sy-10, clamp(lx+80-sway*1.2, armMinX, armMaxX), armTargetY, true, false);
         ctx.globalAlpha = 1;
     }
-    drawArm(M.sx+80, M.sy-10, lx-100+sway, orBot-40, erratic, true);
-    drawArm(M.sx+180, M.sy-10, lx-50+sway2, orBot-45, erratic, true);
-    drawArm(M.sx+M.sw-180, M.sy-10, lx+50-sway2, orBot-45, erratic, false);
-    drawArm(M.sx+M.sw-80, M.sy-10, lx+100-sway, orBot-40, erratic, false);
+    drawArm(M.sx+80, M.sy-10, clamp(lx-80+sway, armMinX, armMaxX), armTargetY, erratic, true);
+    drawArm(M.sx+180, M.sy-10, clamp(lx-30+sway2, armMinX, armMaxX), armTargetY-5, erratic, true);
+    drawArm(M.sx+M.sw-180, M.sy-10, clamp(lx+30-sway2, armMinX, armMaxX), armTargetY-5, erratic, false);
+    drawArm(M.sx+M.sw-80, M.sy-10, clamp(lx+80-sway, armMinX, armMaxX), armTargetY, erratic, false);
 
     // HUD
     if (GAME.state === 'PLAYING' || GAME.state === 'RESOLUTION') {
@@ -315,26 +373,44 @@ function drawORScene() {
 }
 
 function drawPatient(cx, y) {
-    // Bed — BIGGER (380 wide, 30 tall)
-    drawRoundRect(cx-190, y+6, 380, 30, 10, '#BDBDBD', '#999', 2);
+    // Bed — 460 wide, 36 tall
+    drawRoundRect(cx-230, y+8, 460, 36, 12, '#BDBDBD', '#999', 2);
     // Bed legs
-    drawRect(cx-165, y+36, 16, 26, '#888');
-    drawRect(cx+149, y+36, 16, 26, '#888');
-    // Head — BIGGER (22 radius)
-    ctx.fillStyle = '#EAC086'; ctx.beginPath(); ctx.arc(cx-150, y+2, 22, 0, Math.PI*2); ctx.fill();
+    drawRect(cx-205, y+44, 18, 30, '#888');
+    drawRect(cx+187, y+44, 18, 30, '#888');
+    // Bed rail hints
+    ctx.strokeStyle = '#AAA'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(cx-230, y+4); ctx.lineTo(cx-230, y-10); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx+230, y+4); ctx.lineTo(cx+230, y-10); ctx.stroke();
+    // Head — 32 radius
+    ctx.fillStyle = '#EAC086'; ctx.beginPath(); ctx.arc(cx-185, y+2, 32, 0, Math.PI*2); ctx.fill();
     // Surgical cap
-    ctx.fillStyle = '#00ACC1'; ctx.beginPath(); ctx.arc(cx-150, y-3, 23, Math.PI, 0); ctx.fill();
-    // Body/gown — scaled up
-    let breath = Math.sin(performance.now()/500)*4;
+    ctx.fillStyle = '#00ACC1'; ctx.beginPath(); ctx.arc(cx-185, y-5, 33, Math.PI, 0); ctx.fill();
+    // Body/gown — bigger blanket with more volume
+    let breath = Math.sin(performance.now()/500)*5;
+    // Blanket shadow (depth)
+    ctx.fillStyle = 'rgba(1,87,155,0.2)';
+    ctx.beginPath();
+    ctx.moveTo(cx-155, y+10); ctx.quadraticCurveTo(cx-40, y-42-breath, cx+10, y-22-breath);
+    ctx.quadraticCurveTo(cx+100, y-36, cx+210, y+10); ctx.lineTo(cx-155, y+10);
+    ctx.fill();
+    // Main blanket
     ctx.fillStyle = '#81D4FA'; ctx.strokeStyle = '#0288D1'; ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(cx-130, y+6); ctx.quadraticCurveTo(cx-40, y-36-breath, cx, y-18-breath);
-    ctx.quadraticCurveTo(cx+80, y-28, cx+165, y+6); ctx.lineTo(cx-130, y+6);
+    ctx.moveTo(cx-155, y+6); ctx.quadraticCurveTo(cx-40, y-48-breath, cx+10, y-26-breath);
+    ctx.quadraticCurveTo(cx+100, y-38, cx+210, y+6); ctx.lineTo(cx-155, y+6);
     ctx.fill(); ctx.stroke();
-    // Drape detail lines
-    ctx.strokeStyle = 'rgba(2,136,209,0.3)'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(cx-80, y+2); ctx.lineTo(cx+100, y+2); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(cx-60, y-4); ctx.lineTo(cx+80, y-6); ctx.stroke();
+    // Blanket highlight strip (top ridge)
+    ctx.strokeStyle = 'rgba(179,229,252,0.6)'; ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(cx-120, y-8); ctx.quadraticCurveTo(cx-20, y-44-breath, cx+10, y-26-breath);
+    ctx.quadraticCurveTo(cx+60, y-34, cx+140, y-8);
+    ctx.stroke();
+    // Drape fold lines
+    ctx.strokeStyle = 'rgba(2,136,209,0.25)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(cx-100, y+2); ctx.lineTo(cx+140, y+2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx-80, y-8); ctx.lineTo(cx+120, y-10); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx-50, y-18); ctx.lineTo(cx+80, y-20); ctx.stroke();
 }
 
 function drawArm(sx2, sy2, tx, ty, erratic, flip) {
@@ -342,20 +418,20 @@ function drawArm(sx2, sy2, tx, ty, erratic, flip) {
     let ex = sx2+dx*0.35+bd*50, ey = sy2+dy*0.5;
     let wx = sx2+dx*0.7+bd*18, wy = sy2+dy*0.85;
     if (erratic) { ex+=(Math.random()-0.5)*30; ey+=(Math.random()-0.5)*30; wx+=(Math.random()-0.5)*18; wy+=(Math.random()-0.5)*18; tx+=(Math.random()-0.5)*14; ty+=(Math.random()-0.5)*14; }
-    ctx.lineWidth=22; ctx.strokeStyle = erratic ? '#FF4444' : '#455A64';
+    ctx.lineWidth=35; ctx.strokeStyle = erratic ? '#FF4444' : '#455A64';
     ctx.beginPath(); ctx.moveTo(sx2, sy2); ctx.lineTo(ex, ey); ctx.stroke();
-    ctx.lineWidth=16; ctx.strokeStyle = erratic ? '#EF5350' : '#607D8B';
+    ctx.lineWidth=25; ctx.strokeStyle = erratic ? '#EF5350' : '#607D8B';
     ctx.beginPath(); ctx.moveTo(ex, ey); ctx.lineTo(wx, wy); ctx.stroke();
-    ctx.lineWidth=11; ctx.strokeStyle='#78909C';
+    ctx.lineWidth=18; ctx.strokeStyle='#78909C';
     ctx.beginPath(); ctx.moveTo(wx, wy); ctx.lineTo(tx, ty); ctx.stroke();
-    ctx.fillStyle='#263238'; ctx.beginPath(); ctx.arc(sx2, sy2, 18, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle='#37474F'; ctx.beginPath(); ctx.arc(ex, ey, 14, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle = erratic ? '#FF1744' : '#00E676'; ctx.beginPath(); ctx.arc(ex, ey, 5, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle='#546E7A'; ctx.beginPath(); ctx.arc(wx, wy, 10, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle='#E0E0E0'; ctx.strokeStyle='#B0BEC5'; ctx.lineWidth=2;
+    ctx.fillStyle='#263238'; ctx.beginPath(); ctx.arc(sx2, sy2, 26, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle='#37474F'; ctx.beginPath(); ctx.arc(ex, ey, 20, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = erratic ? '#FF1744' : '#00E676'; ctx.beginPath(); ctx.arc(ex, ey, 7, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle='#546E7A'; ctx.beginPath(); ctx.arc(wx, wy, 15, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle='#E0E0E0'; ctx.strokeStyle='#B0BEC5'; ctx.lineWidth=3;
     if (flip) {
-        ctx.beginPath(); ctx.moveTo(tx-5,ty); ctx.lineTo(tx+2,ty+24); ctx.lineTo(tx+8,ty); ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(tx-8,ty); ctx.lineTo(tx+3,ty+32); ctx.lineTo(tx+12,ty); ctx.closePath(); ctx.fill(); ctx.stroke();
     } else {
-        ctx.beginPath(); ctx.moveTo(tx,ty); ctx.lineTo(tx-7,ty+20); ctx.moveTo(tx,ty); ctx.lineTo(tx+7,ty+20); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(tx,ty); ctx.lineTo(tx-10,ty+28); ctx.moveTo(tx,ty); ctx.lineTo(tx+10,ty+28); ctx.stroke();
     }
 }

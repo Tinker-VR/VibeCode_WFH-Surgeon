@@ -70,6 +70,74 @@ function drawDeskItems() {
     ctx.beginPath(); ctx.moveTo(-5, -8); ctx.lineTo(-5, 8); ctx.arc(-2, 8, 3, Math.PI, 0); ctx.lineTo(1, -5); ctx.arc(-2, -5, 3, 0, Math.PI); ctx.stroke();
     ctx.restore();
 
+    // Eraser
+    ctx.save(); ctx.translate(380, dy + 168); ctx.rotate(0.25);
+    drawRoundRect(-12, -8, 24, 16, 3, '#F8BBD0', '#EC407A', 1);
+    ctx.restore();
+
+    // Tape dispenser
+    ctx.save(); ctx.translate(780, dy + 140); ctx.rotate(-0.1);
+    drawRoundRect(-20, -12, 40, 24, 4, '#333', '#222', 1);
+    ctx.fillStyle = '#90CAF9'; ctx.fillRect(-16, -8, 28, 16);
+    ctx.restore();
+
+    // Stapler
+    ctx.save(); ctx.translate(950, dy + 100); ctx.rotate(0.08);
+    drawRoundRect(-30, -8, 60, 16, 4, '#C62828', '#B71C1C', 2);
+    drawRoundRect(-28, -14, 56, 8, 3, '#D32F2F', null);
+    ctx.restore();
+
+    // Headphones
+    ctx.save(); ctx.translate(110, dy + 180); ctx.rotate(-0.3);
+    ctx.strokeStyle = '#333'; ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.arc(0, 0, 28, Math.PI, 0); ctx.stroke();
+    drawRoundRect(-32, -5, 14, 22, 5, '#444', '#333', 1);
+    drawRoundRect(18, -5, 14, 22, 5, '#444', '#333', 1);
+    ctx.restore();
+
+    // Snack wrapper
+    ctx.save(); ctx.translate(830, dy + 180); ctx.rotate(0.35);
+    drawRoundRect(-22, -10, 44, 20, 3, '#FFD54F', '#FFA000', 1);
+    ctx.strokeStyle = '#FF6F00'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(-22, -4); ctx.lineTo(-28, -8); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(22, -4); ctx.lineTo(28, -8); ctx.stroke();
+    ctx.restore();
+
+    // Extra sticky note (green)
+    ctx.save(); ctx.translate(750, dy + 70); ctx.rotate(0.06);
+    drawRoundRect(-18, -18, 36, 36, 3, '#C5E1A5', '#8BC34A', 1);
+    ctx.strokeStyle = '#AED581'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(-10, -6); ctx.lineTo(10, -6); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-10, 2); ctx.lineTo(6, 2); ctx.stroke();
+    ctx.restore();
+
+    // Extra sticky note (yellow)
+    ctx.save(); ctx.translate(400, dy + 180); ctx.rotate(-0.12);
+    drawRoundRect(-18, -18, 36, 36, 3, '#FFE082', '#FFB300', 1);
+    ctx.strokeStyle = '#FFCA28'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(-10, -4); ctx.lineTo(10, -4); ctx.stroke();
+    ctx.restore();
+
+    // Extra paper (purple-tinted)
+    ctx.save(); ctx.translate(700, dy + 170); ctx.rotate(-0.2);
+    drawRoundRect(-30, -22, 60, 44, 2, '#F3E5F5', '#CE93D8', 1);
+    ctx.strokeStyle = '#BA68C8'; ctx.lineWidth = 1;
+    for (let ln = 0; ln < 3; ln++) { ctx.beginPath(); ctx.moveTo(-20, -10+ln*10); ctx.lineTo(20, -10+ln*10); ctx.stroke(); }
+    ctx.restore();
+
+    // Green pen
+    ctx.save(); ctx.translate(500, dy + 175); ctx.rotate(-0.4);
+    ctx.strokeStyle = '#2E7D32'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-22, 0); ctx.lineTo(22, 0); ctx.stroke();
+    ctx.fillStyle = '#B0BEC5'; ctx.beginPath(); ctx.moveTo(22, -2); ctx.lineTo(27, 0); ctx.lineTo(22, 2); ctx.fill();
+    ctx.restore();
+
+    // Gold paper clip
+    ctx.save(); ctx.translate(650, dy + 155); ctx.rotate(-0.3);
+    ctx.strokeStyle = '#FFD54F'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(-5, -8); ctx.lineTo(-5, 8); ctx.arc(-2, 8, 3, Math.PI, 0); ctx.lineTo(1, -5); ctx.arc(-2, -5, 3, 0, Math.PI); ctx.stroke();
+    ctx.restore();
+
     // Coaster (coffee ring mark) — moved to match new mug position
     ctx.strokeStyle = 'rgba(0,0,0,0.06)'; ctx.lineWidth = 3;
     ctx.beginPath(); ctx.arc(255, dy + 120, 35, 0, Math.PI*2); ctx.stroke();
@@ -199,9 +267,14 @@ function drawDeskItems() {
     }
     ctx.restore();
 
-    // === MOUSE (right of keyboard, with shake + rotation) ===
-    const msx = kx + kbW + 20;
-    const msy = ky + kbH/2 - 42;
+    // === MOUSE (right of keyboard, with shake + rotation + autonomous drift) ===
+    let msx = kx + kbW + 20;
+    let msy = ky + kbH/2 - 42;
+    if (GAME.state === 'PLAYING') {
+        const mt = performance.now() / 1000;
+        msx += Math.sin(mt * 0.4 + GAME.deskMousePhaseX) * 8 + Math.sin(mt * 0.9) * 3;
+        msy += Math.cos(mt * 0.35 + GAME.deskMousePhaseY) * 6 + Math.cos(mt * 0.7) * 2;
+    }
     const msW = 55, msH = 80;
     ctx.save();
     ctx.translate(msx + msW/2 + kbShkX*0.5, msy + msH/2 + kbShkY*0.5);

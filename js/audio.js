@@ -4,13 +4,17 @@
 
 const AudioEngine = {
     ctx: null, enabled: true, lastEkgTime: 0,
-    bgmPlaying: false, bgmNodes: [], bgmNextBeat: 0, bgmBPM: 72,
+    bgmPlaying: false, bgmNodes: [], bgmNextBeat: 0, bgmBPM: 150,
     bgmChordIndex: 0,
     bgmChords: [
-        [261.6, 329.6, 392.0],
-        [220.0, 277.2, 329.6],
-        [246.9, 311.1, 370.0],
-        [261.6, 311.1, 392.0],
+        [261.6, 329.6, 392.0],   // C major
+        [293.7, 370.0, 440.0],   // D major
+        [329.6, 415.3, 493.9],   // E major
+        [220.0, 277.2, 329.6],   // A minor
+        [246.9, 311.1, 370.0],   // B minor
+        [349.2, 440.0, 523.3],   // F major
+        [293.7, 370.0, 440.0],   // D major
+        [392.0, 493.9, 587.3],   // G major
     ],
 
     init() {
@@ -112,34 +116,37 @@ const AudioEngine = {
             const beatLen = 60 / this.bgmBPM;
             const chord = this.bgmChords[this.bgmChordIndex % this.bgmChords.length];
 
+            // Chords — sawtooth, brighter, louder
             chord.forEach(freq => {
                 const o = this.ctx.createOscillator();
                 const g = this.ctx.createGain();
                 const f = this.ctx.createBiquadFilter();
-                o.type = 'triangle';
+                o.type = 'sawtooth';
                 o.frequency.setValueAtTime(freq * 0.5, t);
-                f.type = 'lowpass'; f.frequency.value = 400;
+                f.type = 'lowpass'; f.frequency.value = 800;
                 g.gain.setValueAtTime(0, t);
-                g.gain.linearRampToValueAtTime(0.025, t + 0.3);
-                g.gain.setValueAtTime(0.025, t + beatLen * 2 - 0.3);
+                g.gain.linearRampToValueAtTime(0.04, t + 0.05);
+                g.gain.setValueAtTime(0.04, t + beatLen * 2 - 0.05);
                 g.gain.linearRampToValueAtTime(0, t + beatLen * 2);
                 o.connect(f).connect(g).connect(this.ctx.destination);
                 o.start(t); o.stop(t + beatLen * 2 + 0.1);
                 this.bgmNodes.push(o);
             });
 
+            // Bass — square wave, punchier
             const bass = this.ctx.createOscillator();
             const bg2 = this.ctx.createGain();
-            bass.type = 'sine';
+            bass.type = 'square';
             bass.frequency.setValueAtTime(chord[0] * 0.25, t);
             bg2.gain.setValueAtTime(0, t);
-            bg2.gain.linearRampToValueAtTime(0.04, t + 0.1);
-            bg2.gain.linearRampToValueAtTime(0.02, t + beatLen - 0.1);
+            bg2.gain.linearRampToValueAtTime(0.06, t + 0.05);
+            bg2.gain.linearRampToValueAtTime(0.04, t + beatLen - 0.05);
             bg2.gain.linearRampToValueAtTime(0, t + beatLen);
             bass.connect(bg2).connect(this.ctx.destination);
             bass.start(t); bass.stop(t + beatLen + 0.1);
             this.bgmNodes.push(bass);
 
+            // Hi-hat tick
             const tickLen = 0.04;
             const tickBuf = this.ctx.createBuffer(1, this.ctx.sampleRate * tickLen, this.ctx.sampleRate);
             const tickData = tickBuf.getChannelData(0);
@@ -149,16 +156,44 @@ const AudioEngine = {
             const tickG = this.ctx.createGain();
             const tickF = this.ctx.createBiquadFilter();
             tickF.type = 'highpass'; tickF.frequency.value = 6000;
-            tickG.gain.setValueAtTime(0.015, t);
+            tickG.gain.setValueAtTime(0.03, t);
             tickSrc.connect(tickF).connect(tickG).connect(this.ctx.destination);
             tickSrc.start(t); tickSrc.stop(t + tickLen + 0.01);
             this.bgmNodes.push(tickSrc);
+
+            // Sub kick
+            const kick = this.ctx.createOscillator();
+            const kickG = this.ctx.createGain();
+            kick.type = 'sine';
+            kick.frequency.setValueAtTime(150, t);
+            kick.frequency.exponentialRampToValueAtTime(40, t + 0.1);
+            kickG.gain.setValueAtTime(0.06, t);
+            kickG.gain.linearRampToValueAtTime(0, t + 0.15);
+            kick.connect(kickG).connect(this.ctx.destination);
+            kick.start(t); kick.stop(t + 0.2);
+            this.bgmNodes.push(kick);
+
+            // Offbeat hi-hat
+            const hhTime = t + beatLen / 2;
+            const hhLen = 0.03;
+            const hhBuf = this.ctx.createBuffer(1, this.ctx.sampleRate * hhLen, this.ctx.sampleRate);
+            const hhData = hhBuf.getChannelData(0);
+            for (let j = 0; j < hhData.length; j++) hhData[j] = (Math.random()*2-1) * Math.max(0, 1 - j/hhData.length);
+            const hhSrc = this.ctx.createBufferSource();
+            hhSrc.buffer = hhBuf;
+            const hhG = this.ctx.createGain();
+            const hhF = this.ctx.createBiquadFilter();
+            hhF.type = 'highpass'; hhF.frequency.value = 8000;
+            hhG.gain.setValueAtTime(0.025, hhTime);
+            hhSrc.connect(hhF).connect(hhG).connect(this.ctx.destination);
+            hhSrc.start(hhTime); hhSrc.stop(hhTime + hhLen + 0.01);
+            this.bgmNodes.push(hhSrc);
 
             this.bgmNextBeat += beatLen;
             if (Math.round((this.bgmNextBeat - now) / beatLen) % 2 === 0) this.bgmChordIndex++;
         }
 
-        if (this.bgmNodes.length > 50) this.bgmNodes = this.bgmNodes.slice(-30);
-        if (this.bgmPlaying) setTimeout(() => this._scheduleBGM(), 500);
+        if (this.bgmNodes.length > 100) this.bgmNodes = this.bgmNodes.slice(-60);
+        if (this.bgmPlaying) setTimeout(() => this._scheduleBGM(), 300);
     }
 };

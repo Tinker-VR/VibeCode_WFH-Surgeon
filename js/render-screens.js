@@ -81,7 +81,8 @@ function drawScreenStore() {
     const smX = M.sx+M.sw/2-48;
     ctx.beginPath(); ctx.moveTo(smX, M.sy+37); ctx.quadraticCurveTo(smX+48, M.sy+48, smX+96, M.sy+35); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(smX+89, M.sy+28); ctx.lineTo(smX+96, M.sy+35); ctx.lineTo(smX+87, M.sy+38); ctx.stroke();
-    drawText('Prime Scalpel Delivery™', M.sx+M.sw/2, M.sy+51, 13, '#888', 'center', null, 0, 'normal');
+    drawText('Purchase plugins from Scamazon.', M.sx+M.sw/2, M.sy+49, 15, '#CCC', 'center', null, 0, 'normal');
+    drawText('All plugins last ONE ROUND only!', M.sx+M.sw/2, M.sy+64, 13, '#FF9800', 'center', null, 0, 'normal');
 
     drawButton('← BACK', M.sx+20, M.sy+14, 110, 38, '#444', 16);
 
@@ -92,17 +93,25 @@ function drawScreenStore() {
     STORE_ITEMS.forEach((item, i) => {
         const col = i % cols, row = Math.floor(i / cols);
         const ix = M.sx + 15 + col * (cardW + 10);
-        const iy = M.sy + 68 + row * 118;
+        const iy = M.sy + 78 + row * 118;
         drawShadowRoundRect(ix, iy, cardW, cardH, 10, '#1A2332', '#2A3A4E', 2);
         drawText(item.icon, ix+28, iy+30, 28, '#FFF', 'center');
-        drawText(item.title, ix+50, iy+20, 16, '#FFF', 'left');
-        drawText(item.desc, ix+50, iy+42, 12, '#7889A0', 'left', null, 0, 'normal');
+        drawText(item.title, ix+50, iy+20, 18, '#FFF', 'left');
+        drawText(item.desc, ix+50, iy+42, 14, '#7889A0', 'left', null, 0, 'normal');
         const isMax = item.consumable && GAME.hearts >= GAME.maxHearts;
         const owned = !item.consumable && GAME.upgrades[item.id];
         const bc = (owned||isMax) ? '#555' : GAME.cash>=item.price ? COLORS.scamOrange : '#555';
         const bt = owned ? 'OWNED' : isMax ? 'FULL' : `$${item.price}`;
         drawButton(bt, ix+cardW/2-50, iy+78, 100, 26, bc, 14);
     });
+
+    // NEXT OPERATION button — only when navigating from resolution screen
+    if (GAME.storeReturnState === 'RESOLUTION') {
+        const nextBtnW = 280, nextBtnH = 44;
+        const nextBtnX = M.sx + M.sw/2 - nextBtnW/2;
+        const nextBtnY = M.sy + M.sh - 55;
+        drawButton('NEXT OPERATION \u25B6', nextBtnX, nextBtnY, nextBtnW, nextBtnH, COLORS.green, 20, true);
+    }
 
     ctx.restore();
 }
@@ -144,20 +153,19 @@ function drawScreenResolution() {
         }
     }
 
-    const btnW=220, btnH=55, gap=20, total=btnW*3+gap*2;
-    const bx0 = M.sx+(M.sw-total)/2, by = M.sy+M.sh-80;
+    const btnW=220, btnH=55, gap=30;
+    const total2=btnW*2+gap;
+    const bx0 = M.sx+(M.sw-total2)/2, by = M.sy+M.sh-80;
     if (isWin) {
-        drawButton('NEXT OP', bx0, by, btnW, btnH, COLORS.green, 22, true);
-        drawButton('SCAMAZON', bx0+btnW+gap, by, btnW, btnH, COLORS.scamOrange, 22);
-        drawButton('QUIT', bx0+(btnW+gap)*2, by, btnW, btnH, COLORS.red, 22);
+        drawButton('OPEN SHOP', bx0, by, btnW, btnH, COLORS.scamOrange, 22, true);
+        drawButton('QUIT', bx0+btnW+gap, by, btnW, btnH, COLORS.red, 22);
     } else {
         const retryCost = (GAME.rank+1)*300;
         const canAfford = GAME.cash >= retryCost;
         const rt = canAfford ? `RETRY (-$${retryCost})` : `RETRY ($${retryCost})`;
         const rc = canAfford ? COLORS.gold : '#444';
         drawButton(rt, bx0, by, btnW, btnH, rc, 18, canAfford);
-        drawButton('SCAMAZON', bx0+btnW+gap, by, btnW, btnH, COLORS.scamOrange, 22);
-        drawButton('QUIT', bx0+(btnW+gap)*2, by, btnW, btnH, COLORS.red, 22);
+        drawButton('QUIT', bx0+btnW+gap, by, btnW, btnH, COLORS.red, 22);
     }
     ctx.restore();
 }

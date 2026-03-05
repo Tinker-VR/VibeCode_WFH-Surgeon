@@ -61,12 +61,7 @@ const STORE_ITEMS = [
 
 const DEFAULT_UPGRADES = { keyboard:false, ethernet:false, treats:false, lawyer:false, energy:false, mugLid:false, adBlock:false, powerBank:false, wrench:false, antivirus:false };
 
-// ===================== TESTING VARIABLES =====================
-const DEBUG_FORCE_HAZARD = null;
-const DEBUG_STARTING_CASH = 0;
-const DEBUG_STARTING_RANK = 0;
-const DEBUG_GOD_MODE = false;
-// ===================== END TESTING VARIABLES =================
+// Debug variables are defined in index.html for easy access
 
 const STARTING_CASH = DEBUG_STARTING_CASH;
 const STARTING_RANK = DEBUG_STARTING_RANK;

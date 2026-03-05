@@ -32,7 +32,7 @@ window.addEventListener('mouseup', (e) => {
 
 window.addEventListener('mousedown', (e) => {
     updateMousePos(e);
-    if (!AudioEngine.ctx) AudioEngine.init();
+    if (!AudioEngine.ctx) { AudioEngine.init(); AudioEngine.startBGM(); }
 
     // Pause button — only during PLAYING state (check BEFORE paused block)
     const pb = GAME.pauseBtn;
@@ -54,7 +54,7 @@ window.addEventListener('mousedown', (e) => {
     if (isHover(mb.x, mb.y, mb.w, mb.h)) {
         AudioEngine.enabled = !AudioEngine.enabled;
         if (!AudioEngine.enabled) AudioEngine.stopBGM();
-        else if (GAME.state === 'PLAYING') AudioEngine.startBGM();
+        else AudioEngine.startBGM();
         return;
     }
 
@@ -98,13 +98,24 @@ window.addEventListener('mousedown', (e) => {
             AudioEngine.playClick();
             GAME.state = GAME.storeReturnState || 'MENU';
         }
+        // NEXT OPERATION button (only when coming from resolution)
+        if (GAME.storeReturnState === 'RESOLUTION') {
+            const nextBtnW = 280, nextBtnH = 44;
+            const nextBtnX = sx + sw/2 - nextBtnW/2;
+            const nextBtnY = sy + sh - 55;
+            if (isHover(nextBtnX, nextBtnY, nextBtnW, nextBtnH)) {
+                AudioEngine.playClick();
+                startOperation();
+                return;
+            }
+        }
         // Single-page grid — all items
         const cols = 4;
         const cardW = Math.floor((sw - 30 - (cols-1)*10) / cols);
         STORE_ITEMS.forEach((item, i) => {
             const col = i % cols, row = Math.floor(i / cols);
             const ix = sx + 15 + col * (cardW + 10);
-            const iy = sy + 68 + row * 118;
+            const iy = sy + 78 + row * 118;
             const bx2 = ix + cardW/2 - 50, by2 = iy + 78;
             if (isHover(bx2, by2, 100, 26)) {
                 if (item.consumable) {
@@ -138,28 +149,29 @@ window.addEventListener('mousedown', (e) => {
             if (isHover(qx + 220, qy + 103, 170, 52)) { AudioEngine.playClick(); GAME.showQuitConfirm = false; }
             return;
         }
-        const btnW = 220, btnH = 55, gap = 20;
-        const total = btnW*3 + gap*2;
+        const btnW = 220, btnH = 55, gap = 30;
+        const total = btnW*2 + gap;
         const bx0 = sx + (sw - total)/2;
         const by = sy + sh - 80;
 
         if (GAME.lastResult === 'WIN') {
-            // NEXT OP — start directly (no shop detour)
-            if (isHover(bx0, by, btnW, btnH)) { AudioEngine.playClick(); startOperation(); }
-            if (isHover(bx0+btnW+gap, by, btnW, btnH)) { AudioEngine.playClick(); GAME.storeReturnState = 'RESOLUTION'; GAME.state = 'STORE'; }
-            if (isHover(bx0+(btnW+gap)*2, by, btnW, btnH)) { AudioEngine.playClick(); GAME.showQuitConfirm = true; }
+            // OPEN SHOP
+            if (isHover(bx0, by, btnW, btnH)) { AudioEngine.playClick(); GAME.storeReturnState = 'RESOLUTION'; GAME.state = 'STORE'; }
+            // QUIT
+            if (isHover(bx0+btnW+gap, by, btnW, btnH)) { AudioEngine.playClick(); GAME.showQuitConfirm = true; }
         } else {
-            // NO FREE RETRY — must afford the cost
+            // RETRY — must afford the cost, then go to shop
             const retryCost = (GAME.rank+1)*300;
             if (isHover(bx0, by, btnW, btnH) && GAME.cash >= retryCost) {
                 AudioEngine.playClick();
                 GAME.cash -= retryCost;
                 GAME.maxHearts = GAME.upgrades.lawyer ? 4 : 3;
                 GAME.hearts = GAME.maxHearts;
-                startOperation();
+                GAME.storeReturnState = 'RESOLUTION';
+                GAME.state = 'STORE';
             }
-            if (isHover(bx0+btnW+gap, by, btnW, btnH)) { AudioEngine.playClick(); GAME.storeReturnState = 'RESOLUTION'; GAME.state = 'STORE'; }
-            if (isHover(bx0+(btnW+gap)*2, by, btnW, btnH)) { AudioEngine.playClick(); GAME.showQuitConfirm = true; }
+            // QUIT
+            if (isHover(bx0+btnW+gap, by, btnW, btnH)) { AudioEngine.playClick(); GAME.showQuitConfirm = true; }
         }
         return;
     }

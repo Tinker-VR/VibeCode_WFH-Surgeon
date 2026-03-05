@@ -49,7 +49,6 @@ function startOperation() {
     GAME.routerFlashTimer = 0;
     generateSequence(5 + Math.floor(GAME.rank * 0.45));
     GAME.state = 'PLAYING';
-    AudioEngine.startBGM();
 }
 
 function generateSequence(len) {
@@ -139,7 +138,6 @@ function triggerResolution(result) {
     GAME.hazard = null; GAME.dimLevel = 0; GAME.inputBuffer = []; GAME.paused = false;
     GAME.routerShakeTimer = 0; GAME.kbShakeTimer = 0;
     GAME.catFlashTimer = 0; GAME.catStars = [];
-    AudioEngine.stopBGM();
     if (result === 'WIN') {
         if (GAME.rank < 14) GAME.rank++;
         const base = 200 + GAME.rank*100;
