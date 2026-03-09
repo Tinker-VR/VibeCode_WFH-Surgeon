@@ -43,7 +43,9 @@ function startOperation() {
     if (GAME.upgrades.energy_time) GAME.phaseTimerMax *= 1.4;
     GAME.phasesNeeded = 3 + Math.floor(GAME.rank*0.5);
     GAME.phasesCompleted = 0; GAME.perfectStreak = 0;
-    GAME.flavorText = `${PROCEDURES[Math.floor(Math.random()*PROCEDURES.length)]} | ${PATIENTS[Math.floor(Math.random()*PATIENTS.length)]}`;
+    GAME.operationName = PROCEDURES[Math.floor(Math.random()*PROCEDURES.length)];
+    GAME.patientName = PATIENTS[Math.floor(Math.random()*PATIENTS.length)];
+    GAME.flavorText = `${GAME.operationName} | ${GAME.patientName}`;
     GAME.hazardTimer = 0;
     const hfMin = 8000 - GAME.rank*350, hfMax = 12000 - GAME.rank*450;
     GAME.hazardNextSpawn = hfMin + Math.random()*(hfMax - hfMin);
@@ -99,9 +101,8 @@ function spawnHazard() {
     }
     if (GAME.hazard === 'battery') {
         GAME.dimLevel=0; GAME.batteryDrag=false;
-        const M = MONITOR;
-        GAME.plugPos = {x: M.sx + 50, y: M.sy + M.sh/2};
-        GAME.socketPos = {x: M.sx + M.sw - 50, y: M.sy + M.sh/2};
+        GAME.plugPos = {x: 80, y: DESK_Y + 80};
+        GAME.socketPos = {x: CW - 130, y: DESK_Y + 80};
         AudioEngine.playBatteryWarning();
     }
     if (GAME.hazard === 'lag') { AudioEngine.playWifiStatic(); GAME.routerShakeTimer = 999999; }
@@ -130,7 +131,7 @@ function spawnHazard() {
 }
 
 function clearHazard() {
-    GAME.hazard = null; GAME.coffeeWipe = 0; GAME.dimLevel = 0;
+    GAME.hazard = null; GAME.coffeeWipe = 0; GAME.coffeeWiping = false; GAME.dimLevel = 0;
     GAME.routerShakeTimer = 0;
     GAME.kbScrews = [false,false,false,false]; GAME.hasScrewdriver = false;
     GAME.virusIcons = []; GAME.virusesClicked = 0;

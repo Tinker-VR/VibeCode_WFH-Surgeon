@@ -24,6 +24,7 @@ function loop(timestamp) {
         if (GAME.armReach > 0) GAME.armReach = Math.max(0, GAME.armReach - dt*0.12);
         if (GAME.armGlitchTimer > 0) GAME.armGlitchTimer -= dt;
         if (GAME.catFlashTimer > 0) GAME.catFlashTimer -= dt;
+        if (GAME.routerSmashAnim > 0) GAME.routerSmashAnim -= dt;
         // Update cat star particles
         GAME.catStars = GAME.catStars.filter(s => {
             s.x += s.vx * dt / 1000;
@@ -47,19 +48,9 @@ function loop(timestamp) {
                 v.y = Math.max(M.sy + 40, Math.min(M.sy + M.sh - 40, v.y));
             });
         }
-        // Keyboard hazard: continuous shake + hover-to-fix screws
+        // Keyboard hazard: continuous shake (fixing is click-based in input.js)
         if (GAME.hazard === 'kbbreak') {
             GAME.kbShakeTimer = 200;
-            if (GAME.hasScrewdriver) {
-                const screws = getKBScrewPositions();
-                screws.forEach((sp, idx) => {
-                    if (!GAME.kbScrews[idx] && Math.hypot(GAME.mouseX - sp.x, GAME.mouseY - sp.y) < 40) {
-                        GAME.kbScrews[idx] = true;
-                        AudioEngine.playScrewdriver();
-                        if (GAME.kbScrews.every(s => s)) clearHazard();
-                    }
-                });
-            }
         }
         if (!DEBUG_GOD_MODE && GAME.anesthesia <= 0) triggerResolution('AWAKE');
         if (GAME.phaseTimer <= 0) {
@@ -96,7 +87,6 @@ function loop(timestamp) {
     if (GAME.shakeTimer > 0) ctx.translate(shakeX, shakeY);
 
     drawBackground();
-    //drawCatTailBehind();
     drawMonitorFrame();
     drawORScene();
 
@@ -111,6 +101,16 @@ function loop(timestamp) {
     else if (GAME.state === 'RESOLUTION') drawScreenResolution();
 
     drawMonitorEffects();
+
+    // Dimmer (battery hazard) — draw before hazards so hazard UI is visible on top
+    if (GAME.dimLevel > 0) {
+        ctx.save();
+        ctx.beginPath(); ctx.roundRectPolyfill(MONITOR.sx, MONITOR.sy, MONITOR.sw, MONITOR.sh, 4); ctx.clip();
+        ctx.fillStyle = `rgba(0,0,0,${GAME.dimLevel})`; ctx.fillRect(MONITOR.sx, MONITOR.sy, MONITOR.sw, MONITOR.sh);
+        ctx.restore();
+    }
+
+    drawCatTailBehind();
     drawDeskItems();
     drawHazards();
     drawNotifications(dt);
@@ -121,15 +121,10 @@ function loop(timestamp) {
         ctx.fillStyle = `rgba(255,0,0,${Math.min(0.6, GAME.redFlashTimer/150)})`;
         ctx.fillRect(0, 0, CW, CH);
     }
-    if (GAME.dimLevel > 0) {
-        ctx.save();
-        ctx.beginPath(); ctx.roundRectPolyfill(MONITOR.sx, MONITOR.sy, MONITOR.sw, MONITOR.sh, 4); ctx.clip();
-        ctx.fillStyle = `rgba(0,0,0,${GAME.dimLevel})`; ctx.fillRect(MONITOR.sx, MONITOR.sy, MONITOR.sw, MONITOR.sh);
-        ctx.restore();
-    }
 
     ctx.restore();
     drawMuteButton();
+    drawQuitButton();
     drawPauseOverlay();
     drawPauseButton();
 

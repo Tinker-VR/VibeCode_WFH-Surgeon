@@ -14,7 +14,7 @@ const MONITOR = {
     get sh() { return this.h - this.bezel * 2; },
     standW: 120, standH: 14,
     baseW: 180, baseH: 8,
-    get orH() { return this.sh * 0.70; },
+    get orH() { return this.sh * 0.62; },
     get uiY() { return this.sy + this.orH; },
     get uiH() { return this.sh - this.orH; }
 };

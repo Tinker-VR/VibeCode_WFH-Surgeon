@@ -26,7 +26,7 @@ function drawMonitorFrame() {
     drawRoundRect(M.x+M.w/2 - M.baseW/2, M.y+M.h+M.standH, M.baseW, M.baseH, 3, '#333', '#222', 2);
     ctx.fillStyle = GAME.state === 'PLAYING' ? '#00E676' : '#4CAF50';
     ctx.beginPath(); ctx.arc(M.x+M.w/2, M.y+M.h-8, 4, 0, Math.PI*2); ctx.fill();
-    drawText('LG (Laundering Gray)', M.x+M.w/2, M.y+M.h-8, 10, '#444', 'center', null, 0, 'normal');
+    //drawText('LG (Laundering Gray)', M.x+M.w/2, M.y+M.h-8, 10, '#444', 'center', null, 0, 'normal');
 }
 
 function drawMonitorEffects() {
@@ -102,6 +102,15 @@ function drawORScene() {
     // Cabinet handle
     ctx.strokeStyle = '#78909C'; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(cabX+cabW-12, cabY+cabH/2-12); ctx.lineTo(cabX+cabW-12, cabY+cabH/2+12); ctx.stroke();
+    // Glass reflection highlight (diagonal stripe)
+    ctx.save();
+    ctx.beginPath(); ctx.rect(cabX+4, cabY+4, cabW-8, cabH-8); ctx.clip();
+    ctx.fillStyle = 'rgba(255,255,255,0.12)';
+    ctx.beginPath();
+    ctx.moveTo(cabX+cabW*0.2, cabY); ctx.lineTo(cabX+cabW*0.4, cabY);
+    ctx.lineTo(cabX+cabW*0.05, cabY+cabH); ctx.lineTo(cabX-cabW*0.15, cabY+cabH);
+    ctx.closePath(); ctx.fill();
+    ctx.restore();
 
     // === HAND SANITIZER DISPENSER (left wall) — muted ===
     const sanX = M.sx + 100, sanY = M.sy + 18;
@@ -144,6 +153,15 @@ function drawORScene() {
         ctx.fillStyle = '#7898A8'; ctx.fillRect(cab2X+48, shelfY-18, 10, 18);
         ctx.fillStyle = '#B09090'; ctx.fillRect(cab2X+64, shelfY-14, 8, 14);
     }
+    // Glass reflection highlight (diagonal stripe)
+    ctx.save();
+    ctx.beginPath(); ctx.rect(cab2X+4, cabY+4, cabW-8, cabH-8); ctx.clip();
+    ctx.fillStyle = 'rgba(255,255,255,0.12)';
+    ctx.beginPath();
+    ctx.moveTo(cab2X+cabW*0.2, cabY); ctx.lineTo(cab2X+cabW*0.4, cabY);
+    ctx.lineTo(cab2X+cabW*0.05, cabY+cabH); ctx.lineTo(cab2X-cabW*0.15, cabY+cabH);
+    ctx.closePath(); ctx.fill();
+    ctx.restore();
 
     // === BLOOD BAG / IV POLE (right side) — muted ===
     const ivX = M.sx + M.sw - 125, ivBaseY = orBot - 55;
@@ -157,7 +175,10 @@ function drawORScene() {
     ctx.beginPath(); ctx.arc(ivX - 8, M.sy + 24, 6, Math.PI, 0); ctx.stroke();
     // Blood bag — muted red
     drawRoundRect(ivX - 20, M.sy + 32, 32, 48, 8, '#8A3030', '#7A2828', 2);
-    drawText('A+', ivX - 4, M.sy + 56, 14, '#C8A0A0', 'center', null, 0, 'normal');
+    // Shadow beneath blood bag
+    ctx.fillStyle = 'rgba(0,0,0,0.15)';
+    ctx.beginPath(); ctx.ellipse(ivX - 4, M.sy + 82, 14, 4, 0, 0, Math.PI*2); ctx.fill();
+    drawText('A+', ivX - 4, M.sy + 56, 16, '#C8A0A0', 'center', null, 0, 'normal');
     // Tube
     ctx.strokeStyle = '#B08888'; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(ivX - 4, M.sy + 80); ctx.quadraticCurveTo(ivX + 14, M.sy + 115, ivX - 35, orBot - 30); ctx.stroke();
@@ -167,9 +188,12 @@ function drawORScene() {
     ctx.beginPath(); ctx.moveTo(ivX, ivBaseY); ctx.lineTo(ivX + 20, orBot-2); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(ivX, ivBaseY); ctx.lineTo(ivX, orBot-2); ctx.stroke();
 
-    // === DEFIBRILLATOR / CRASH CART (right side) — muted ===
+    // === DEFIBRILLATOR / CRASH CART (right side) — muted + metallic gradient ===
     const ccX = M.sx + M.sw - 185, ccBaseY = orBot - 62;
-    drawRoundRect(ccX, ccBaseY, 55, 52, 6, '#3A4A52', '#303C42', 2);
+    // Metallic gradient for cart body
+    const ccGrad = ctx.createLinearGradient(ccX, ccBaseY, ccX+55, ccBaseY+52);
+    ccGrad.addColorStop(0, '#4A5A64'); ccGrad.addColorStop(0.5, '#3A4A52'); ccGrad.addColorStop(1, '#2E3E46');
+    drawRoundRect(ccX, ccBaseY, 55, 52, 6, ccGrad, '#303C42', 2);
     // Defib screen
     drawRoundRect(ccX + 5, ccBaseY + 5, 24, 18, 3, '#000', null);
     ctx.strokeStyle = '#408858'; ctx.lineWidth = 1;
@@ -181,7 +205,7 @@ function drawORScene() {
     ctx.stroke();
     // Paddles — muted
     drawRoundRect(ccX+34, ccBaseY+6, 16, 16, 4, '#9A7030', '#7A5828', 1);
-    drawText('⚡', ccX+42, ccBaseY+14, 10, '#CCC', 'center');
+    drawText('\u26A1', ccX+42, ccBaseY+14, 16, '#CCC', 'center');
     // Wheels
     ctx.fillStyle = '#333';
     ctx.beginPath(); ctx.arc(ccX + 10, ccBaseY + 55, 5, 0, Math.PI*2); ctx.fill();
@@ -195,6 +219,9 @@ function drawORScene() {
     ctx.beginPath(); ctx.moveTo(mayoX - 14, orBot - 2); ctx.lineTo(mayoX + 14, orBot - 2); ctx.stroke();
     // Tray — muted
     drawRoundRect(mayoX - 45, mayoTopY, 90, 20, 5, '#B0B8BC', '#808C92', 2);
+    // Shadow beneath tray
+    ctx.fillStyle = 'rgba(0,0,0,0.12)';
+    ctx.beginPath(); ctx.ellipse(mayoX, mayoTopY + 22, 40, 5, 0, 0, Math.PI*2); ctx.fill();
     // Instruments on tray
     ctx.strokeStyle = '#687880'; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(mayoX - 28, mayoTopY); ctx.lineTo(mayoX - 28, mayoTopY - 16); ctx.stroke();
@@ -222,16 +249,38 @@ function drawORScene() {
     ctx.fillRect(trayX + 18, trayTableY - 9, 4, 9);
     ctx.fillRect(trayX + 30, trayTableY - 6, 4, 6);
 
-    // === SHADOWS ON FLOOR — BIGGER ===
+    // === SHADOWS ON FLOOR — BIGGER + under freestanding props ===
     ctx.fillStyle = 'rgba(0,0,0,0.12)';
     ctx.beginPath(); ctx.ellipse(lx, orBot - 3, 200, 12, 0, 0, Math.PI*2); ctx.fill();
     ctx.beginPath(); ctx.ellipse(mayoX, orBot - 1, 22, 6, 0, 0, Math.PI*2); ctx.fill();
     ctx.beginPath(); ctx.ellipse(ivX, orBot - 1, 24, 6, 0, 0, Math.PI*2); ctx.fill();
     ctx.beginPath(); ctx.ellipse(ccX + 27, orBot - 1, 22, 5, 0, 0, Math.PI*2); ctx.fill();
+    // Floor shadow under bed legs
+    ctx.fillStyle = 'rgba(0,0,0,0.10)';
+    ctx.beginPath(); ctx.ellipse(lx - 196, orBot - 1, 16, 5, 0, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(lx + 196, orBot - 1, 16, 5, 0, 0, Math.PI*2); ctx.fill();
+    // Floor shadow under IV pole base
+    ctx.fillStyle = 'rgba(0,0,0,0.10)';
+    ctx.beginPath(); ctx.ellipse(ivX, orBot - 1, 26, 7, 0, 0, Math.PI*2); ctx.fill();
+    // Floor shadow under crash cart wheels
+    ctx.fillStyle = 'rgba(0,0,0,0.10)';
+    ctx.beginPath(); ctx.ellipse(ccX + 10, orBot - 1, 8, 3, 0, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(ccX + 45, orBot - 1, 8, 3, 0, 0, Math.PI*2); ctx.fill();
+    // Floor shadow under drawer cart wheels
+    ctx.fillStyle = 'rgba(0,0,0,0.10)';
+    const drawerX = M.sx + 18;
+    ctx.beginPath(); ctx.ellipse(drawerX+10, orBot - 1, 7, 3, 0, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(drawerX+50, orBot - 1, 7, 3, 0, 0, Math.PI*2); ctx.fill();
+    // Floor shadow under tray table legs
+    ctx.beginPath(); ctx.ellipse(trayX - 30, orBot - 1, 8, 3, 0, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(trayX + 30, orBot - 1, 8, 3, 0, 0, Math.PI*2); ctx.fill();
 
-    // Lamp — muted housing, but keep light cone visible
+    // Lamp — metallic gradient housing, but keep light cone visible
     const lampX = lx;
-    drawRoundRect(lampX-18, M.sy-5, 36, 35, 10, '#808C92', '#4A585E', 2);
+    // Metallic gradient for lamp housing
+    const lampGrad = ctx.createLinearGradient(lampX-18, M.sy-5, lampX+18, M.sy+30);
+    lampGrad.addColorStop(0, '#98A4AA'); lampGrad.addColorStop(0.4, '#808C92'); lampGrad.addColorStop(1, '#4A585E');
+    drawRoundRect(lampX-18, M.sy-5, 36, 35, 10, lampGrad, '#4A585E', 2);
     ctx.fillStyle = '#C8CCD0'; ctx.strokeStyle = '#687078'; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.arc(lampX, M.sy+22, 70, Math.PI, 0); ctx.fill(); ctx.stroke();
     // Lamp bulbs — slightly muted
@@ -244,10 +293,16 @@ function drawORScene() {
     ctx.fillStyle = lg;
     ctx.beginPath(); ctx.moveTo(lampX-65, M.sy+22); ctx.lineTo(lampX+65, M.sy+22); ctx.lineTo(lampX+150, orBot); ctx.lineTo(lampX-150, orBot); ctx.fill();
 
-    // Heart monitor — muted housing
+    // Heart monitor — muted housing + green glow behind EKG
     const hmx = M.sx+80, hmy = M.sy+15;
     drawShadowRoundRect(hmx, hmy, 95, 72, 10, '#303840', '#222830', 2);
     drawRoundRect(hmx+6, hmy+6, 83, 38, 5, '#000');
+    // Subtle green glow behind EKG line area
+    ctx.save();
+    ctx.shadowColor = '#00E676'; ctx.shadowBlur = 12;
+    ctx.fillStyle = 'rgba(0,230,118,0.06)';
+    ctx.fillRect(hmx+6, hmy+6, 83, 38);
+    ctx.restore();
     ctx.strokeStyle = '#00E676'; ctx.lineWidth = 2;
     let ekg = (performance.now()/12) % 83;
     ctx.beginPath();
@@ -257,9 +312,9 @@ function drawORScene() {
     ctx.stroke();
     ctx.fillStyle = (Math.floor(performance.now()/300)%2===0) ? '#00E676' : '#1B5E20';
     ctx.beginPath(); ctx.arc(hmx+78, hmy+56, 5, 0, Math.PI*2); ctx.fill();
-    drawText('HR', hmx+12, hmy+56, 10, '#4CAF50', 'left', null, 0, 'normal');
-    drawText('SpO2', hmx+12, hmy+66, 10, '#42A5F5', 'left', null, 0, 'normal');
-    drawText('98', hmx+70, hmy+66, 10, '#42A5F5', 'right', null, 0, 'normal');
+    drawText('HR', hmx+12, hmy+56, 16, '#4CAF50', 'left', null, 0, 'normal');
+    drawText('SpO2', hmx+12, hmy+66, 16, '#42A5F5', 'left', null, 0, 'normal');
+    drawText('98', hmx+70, hmy+66, 16, '#42A5F5', 'right', null, 0, 'normal');
 
     // === EKG WIRE from patient to monitor ===
     ctx.strokeStyle = '#66BB6A'; ctx.lineWidth = 1.5;
@@ -270,11 +325,14 @@ function drawORScene() {
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // === ROLLING DRAWER CART (left side) — muted ===
-    const drawerX = M.sx + 18, drawerBaseY = orBot - 78;
+    // === ROLLING DRAWER CART (left side) — muted + gradient per drawer ===
+    const drawerBaseY = orBot - 78;
     drawRoundRect(drawerX, drawerBaseY, 60, 68, 6, '#4A5A60', '#3A484E', 2);
     for (let d = 0; d < 3; d++) {
-        drawRoundRect(drawerX+4, drawerBaseY+4+d*20, 52, 16, 3, '#506068', '#4A5860', 1);
+        // Gradient per drawer face
+        const dwGrad = ctx.createLinearGradient(drawerX+4, drawerBaseY+4+d*20, drawerX+4, drawerBaseY+4+d*20+16);
+        dwGrad.addColorStop(0, '#5A6A72'); dwGrad.addColorStop(0.5, '#506068'); dwGrad.addColorStop(1, '#48585E');
+        drawRoundRect(drawerX+4, drawerBaseY+4+d*20, 52, 16, 3, dwGrad, '#4A5860', 1);
         drawRoundRect(drawerX+22, drawerBaseY+9+d*20, 16, 6, 2, '#607078', null);
     }
     ctx.fillStyle = '#333';
@@ -309,7 +367,7 @@ function drawORScene() {
     const o2X = ivX + 28, o2Y = orBot - 65;
     drawRoundRect(o2X, o2Y, 16, 58, 8, '#6888A0', '#507088', 2);
     drawRoundRect(o2X+3, o2Y-7, 10, 10, 3, '#607078', '#4A585E', 1);
-    drawText('O2', o2X+8, o2Y+30, 9, '#CCC', 'center', null, 0, 'normal');
+    drawText('O2', o2X+8, o2Y+30, 16, '#CCC', 'center', null, 0, 'normal');
 
     // === SUPPLY SHELF (right wall, higher up) — muted ===
     const shelfX = M.sx + M.sw - 95, shelfY = orBot - 80;
@@ -328,13 +386,49 @@ function drawORScene() {
     const gloveX = M.sx + M.sw/2 + 50, gloveY = M.sy + 10;
     drawRoundRect(gloveX, gloveY, 50, 30, 4, '#C0C8C0', '#90A090', 1);
     drawRoundRect(gloveX+15, gloveY+22, 20, 12, 3, '#A8B8A8', null);
-    drawText('GLOVES', gloveX+25, gloveY+14, 7, '#7A9A7A', 'center', null, 0, 'normal');
+    drawText('GLOVES', gloveX+25, gloveY+14, 16, '#7A9A7A', 'center', null, 0, 'normal');
 
-    // === FIRE EXTINGUISHER BOX (wall-mounted, left side) — muted ===
+    // === FIRE EXTINGUISHER (wall-mounted, left side) — drawn version ===
     const feX = M.sx + 105, feY = M.sy + 65;
-    drawRoundRect(feX, feY, 28, 35, 3, '#D0B0B0', '#A07070', 1);
-    drawRoundRect(feX+6, feY+8, 16, 22, 4, '#8A4040', '#7A3535', 1);
-    drawText('\uD83E\uDDEF', feX+14, feY+19, 12, '#DDD', 'center');
+    // Wall-mount bracket
+    drawRoundRect(feX+4, feY, 20, 6, 2, '#808C92', '#606C72', 1);
+    // Cylinder body with gradient
+    const feGrad = ctx.createLinearGradient(feX+6, feY+5, feX+22, feY+5);
+    feGrad.addColorStop(0, '#6A2020'); feGrad.addColorStop(0.3, '#C03030'); feGrad.addColorStop(0.7, '#B02828'); feGrad.addColorStop(1, '#7A2020');
+    ctx.fillStyle = feGrad;
+    ctx.beginPath();
+    ctx.moveTo(feX+8, feY+6); ctx.lineTo(feX+20, feY+6);
+    ctx.quadraticCurveTo(feX+24, feY+6, feX+24, feY+12);
+    ctx.lineTo(feX+24, feY+42);
+    ctx.quadraticCurveTo(feX+24, feY+48, feX+20, feY+48);
+    ctx.lineTo(feX+8, feY+48);
+    ctx.quadraticCurveTo(feX+4, feY+48, feX+4, feY+42);
+    ctx.lineTo(feX+4, feY+12);
+    ctx.quadraticCurveTo(feX+4, feY+6, feX+8, feY+6);
+    ctx.fill();
+    ctx.strokeStyle = '#5A1818'; ctx.lineWidth = 1;
+    ctx.stroke();
+    // Handle/lever on top
+    ctx.fillStyle = '#222'; ctx.strokeStyle = '#111'; ctx.lineWidth = 1;
+    ctx.fillRect(feX+10, feY+2, 8, 6);
+    // Lever arm
+    ctx.strokeStyle = '#333'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(feX+18, feY+4); ctx.lineTo(feX+24, feY+0); ctx.stroke();
+    // Small hose curving down
+    ctx.strokeStyle = '#222'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(feX+6, feY+8);
+    ctx.quadraticCurveTo(feX-2, feY+16, feX+2, feY+28);
+    ctx.stroke();
+    // Nozzle at end of hose
+    ctx.fillStyle = '#333';
+    ctx.beginPath(); ctx.arc(feX+2, feY+28, 2, 0, Math.PI*2); ctx.fill();
+    // Pressure gauge circle
+    ctx.fillStyle = '#DDD'; ctx.strokeStyle = '#888'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(feX+14, feY+16, 4, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+    // Label band
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    ctx.fillRect(feX+5, feY+30, 18, 6);
 
     // === PAPER TOWEL HOLDER (wall-mounted, right side) — muted ===
     const ptX = M.sx + M.sw - 60, ptY = M.sy + 40;
@@ -344,25 +438,21 @@ function drawORScene() {
     // === SHARPS CONTAINER (wall-mounted, near IV) — muted ===
     const scX = ivX - 50, scY = M.sy + 35;
     drawRoundRect(scX, scY, 22, 28, 3, '#A06060', '#804040', 1);
-    drawText('\u26A0', scX+11, scY+14, 10, '#DDD', 'center');
+    drawText('\u26A0', scX+11, scY+14, 16, '#DDD', 'center');
 
     // Patient — centered vertically in OR area, bigger
     const patientY = M.sy + M.orH * 0.55;
-    drawPatient(lx, patientY);
 
-    // Blood
-    ctx.fillStyle = 'rgba(211,47,47,0.8)';
-    GAME.bloodSpills.forEach(s => { ctx.beginPath(); ctx.arc(lx+s.x*0.8, patientY+s.y, s.r*0.8, 0, Math.PI*2); ctx.fill(); });
-
-    // Arms — constrained to patient body area
+    // === ROBOT ARM VARIABLES (computed before drawPatient) ===
     let speed = GAME.state==='PLAYING' ? 600 : 2000;
     let sway = Math.sin(performance.now()/speed)*12 + Math.sin(performance.now()/(speed*0.7))*GAME.armReach*0.4;
     let sway2 = Math.cos(performance.now()/(speed*0.8))*(8+GAME.armReach*0.35);
     let erratic = GAME.armGlitchTimer > 0;
     const armMinX = lx - 180, armMaxX = lx + 180;
-    const armTargetY = patientY - 15;
+    const armTargetY = patientY - 40;
     const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
+    // === OUTER ARMS (behind patient) ===
     if (erratic) {
         ctx.globalAlpha = 0.15;
         drawArm(M.sx+80, M.sy-10, clamp(lx-80+sway*1.2, armMinX, armMaxX), armTargetY, true, true);
@@ -370,19 +460,41 @@ function drawORScene() {
         ctx.globalAlpha = 1;
     }
     drawArm(M.sx+80, M.sy-10, clamp(lx-80+sway, armMinX, armMaxX), armTargetY, erratic, true);
+    drawArm(M.sx+M.sw-80, M.sy-10, clamp(lx+80-sway, armMinX, armMaxX), armTargetY, erratic, false);
+
+    // === DRAW PATIENT (between outer and inner arms) ===
+    drawPatient(lx, patientY);
+
+    // Blood
+    ctx.fillStyle = 'rgba(211,47,47,0.8)';
+    GAME.bloodSpills.forEach(s => { ctx.beginPath(); ctx.arc(lx+s.x*0.8, patientY+s.y, s.r*0.8, 0, Math.PI*2); ctx.fill(); });
+
+    // === INNER ARMS (in front of patient) ===
     drawArm(M.sx+180, M.sy-10, clamp(lx-30+sway2, armMinX, armMaxX), armTargetY-5, erratic, true);
     drawArm(M.sx+M.sw-180, M.sy-10, clamp(lx+30-sway2, armMinX, armMaxX), armTargetY-5, erratic, false);
-    drawArm(M.sx+M.sw-80, M.sy-10, clamp(lx+80-sway, armMinX, armMaxX), armTargetY, erratic, false);
 
     // HUD
     if (GAME.state === 'PLAYING' || GAME.state === 'RESOLUTION') {
         drawRoundRect(M.sx+12, M.sy+6, M.sw-24, 44, 12, 'rgba(0,0,0,0.65)', null);
-        let hx = M.sx+28;
+
+        // LIVE indicator (left side of HUD bar)
+        const liveX = M.sx + 24;
+        if (Math.floor(performance.now()/500)%2===0) {
+            ctx.fillStyle = '#FF1744';
+        } else {
+            ctx.fillStyle = '#880000';
+        }
+        ctx.beginPath(); ctx.arc(liveX, M.sy+28, 5, 0, Math.PI*2); ctx.fill();
+        drawText('LIVE', liveX + 12, M.sy+28, 16, '#FF1744', 'left', null, 0, 'bold');
+
+        // Hearts shifted right after LIVE section
+        let hx = liveX + 60;
         for (let i = 0; i < GAME.maxHearts; i++) {
             const isLawyer = GAME.upgrades.lawyer && i === GAME.maxHearts - 1;
             const hColor = i < GAME.hearts ? (isLawyer ? COLORS.gold : COLORS.red) : '#444';
             drawText('\u2764', hx, M.sy+28, 32, hColor, 'left'); hx += 42;
         }
+        // Anesthesia bar fills remaining width
         const barX = hx + 15, barW = M.sx+M.sw-40 - barX;
         const pct = Math.max(0, GAME.anesthesia/GAME.anesthesiaMax);
         let barC = GAME.upgrades.energy_anes ? '#42A5F5' : (pct > 0.5 ? COLORS.green : pct > 0.2 ? COLORS.gold : COLORS.red);
@@ -398,18 +510,18 @@ function drawORScene() {
         drawText('OR SYSTEM STANDBY', M.sx+M.sw/2, M.sy+30, 18, COLORS.green, 'center');
     }
 
-    // LIVE HOSPITAL FEED badge
-    const badgeW = 195;
-    drawRoundRect(M.sx+M.sw-badgeW-15, M.sy+M.orH-32, badgeW, 28, 14, 'rgba(0,0,0,0.6)', null);
-    if (Math.floor(performance.now()/500)%2===0) { ctx.fillStyle='#FF1744'; ctx.beginPath(); ctx.arc(M.sx+M.sw-badgeW-2, M.sy+M.orH-18, 6, 0, Math.PI*2); ctx.fill(); }
-    drawText('LIVE HOSPITAL FEED', M.sx+M.sw-badgeW/2-10, M.sy+M.orH-18, 13, '#FFF', 'center', null, 0, 'bold');
-
     ctx.restore();
 }
 
 function drawPatient(cx, y) {
-    // Bed — 460 wide, 36 tall — muted
-    drawRoundRect(cx-230, y+8, 460, 36, 12, '#A0A4A8', '#888C90', 2);
+    // Shadow under bed
+    ctx.fillStyle = 'rgba(0,0,0,0.12)';
+    ctx.beginPath(); ctx.ellipse(cx, y+76, 220, 10, 0, 0, Math.PI*2); ctx.fill();
+
+    // Bed — 460 wide, 36 tall — muted + gradient
+    const bedGrad = ctx.createLinearGradient(cx-230, y+8, cx-230, y+44);
+    bedGrad.addColorStop(0, '#B0B4B8'); bedGrad.addColorStop(0.5, '#A0A4A8'); bedGrad.addColorStop(1, '#909498');
+    drawRoundRect(cx-230, y+8, 460, 36, 12, bedGrad, '#888C90', 2);
     // Bed legs
     drawRect(cx-205, y+44, 18, 30, '#787C80');
     drawRect(cx+187, y+44, 18, 30, '#787C80');
@@ -422,12 +534,26 @@ function drawPatient(cx, y) {
     ctx.beginPath(); ctx.ellipse(cx-185, y+0, 48, 22, 0, 0, Math.PI*2); ctx.fill();
     ctx.strokeStyle = '#BBDEFB'; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.ellipse(cx-185, y+0, 48, 22, 0, 0, Math.PI*2); ctx.stroke();
-    // Neck — connects head to blanket
-    //ctx.fillStyle = '#EAC086';
-    // ctx.fillRect(cx-195, y+8, 20, 18);
+
+    // Neck trapezoid — connects head to blanket (drawn AFTER pillow, BEFORE head)
+    ctx.fillStyle = '#EAC086';
+    ctx.beginPath();
+    ctx.moveTo(cx-205, y-8+10);   // left side of head area (head center - offset)
+    ctx.lineTo(cx-165, y-8+10);   // right side of head area
+    ctx.lineTo(cx-155, y+12);     // blanket left edge right side
+    ctx.lineTo(cx-215, y+12);     // blanket left edge left side
+    ctx.closePath();
+    ctx.fill();
     // Neck shadow
-    //ctx.fillStyle = 'rgba(180,140,80,0.3)';
-    //ctx.fillRect(cx-195, y+14, 20, 10);
+    ctx.fillStyle = 'rgba(180,140,80,0.3)';
+    ctx.beginPath();
+    ctx.moveTo(cx-205, y+2);
+    ctx.lineTo(cx-165, y+2);
+    ctx.lineTo(cx-155, y+12);
+    ctx.lineTo(cx-215, y+12);
+    ctx.closePath();
+    ctx.fill();
+
     // Head — 32 radius, raised onto pillow
     ctx.fillStyle = '#EAC086'; ctx.beginPath(); ctx.arc(cx-185, y-8, 32, 0, Math.PI*2); ctx.fill();
     // Surgical cap

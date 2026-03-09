@@ -52,6 +52,17 @@ function drawButton(text, x, y, w, h, color, fontSize = 20, pulse = false) {
 }
 
 function getRankName(ri) {
-    const t = ['Unpaid Intern','Sleep-Deprived Resident','Malpractice Magnet','Chief of Chaos','God Complex'];
-    return `${t[Math.floor(ri/3)] || 'Literally God'} ${['I','II','III'][ri%3] || 'III'}`;
+    const names = ['Intern','Cafeteria Medic','WebMD Graduate','Sleep-Deprived Resident','Malpractice Magnet',
+        'Chief of Vibes','Organ Freelancer','Insurance Nightmare','Dr. Google','Scalpel Influencer',
+        'Surgical Shitposter','Liability Speedrunner','God Complex','Board-Certified War Criminal','Literally God'];
+    return `Level ${ri+1}: ${names[ri] || 'Literally God'}`;
+}
+
+function drawTextTruncated(text, x, y, size, fill, maxWidth, align, shadowCol, shadowBlur, weight) {
+    ctx.font = `${weight || 'bold'} ${size}px 'Segoe UI', Tahoma, sans-serif`;
+    let display = text;
+    while (ctx.measureText(display).width > maxWidth && display.length > 3) {
+        display = display.slice(0, -4) + '...';
+    }
+    drawText(display, x, y, size, fill, align, shadowCol, shadowBlur, weight);
 }

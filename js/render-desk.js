@@ -89,10 +89,12 @@ function drawDeskItems() {
 
     // Headphones
     ctx.save(); ctx.translate(110, dy + 180); ctx.rotate(-0.3);
-    ctx.strokeStyle = '#333'; ctx.lineWidth = 5;
-    ctx.beginPath(); ctx.arc(0, 0, 28, Math.PI, 0); ctx.stroke();
-    drawRoundRect(-32, -5, 14, 22, 5, '#444', '#333', 1);
-    drawRoundRect(18, -5, 14, 22, 5, '#444', '#333', 1);
+    ctx.strokeStyle = '#333'; ctx.lineWidth = 8;
+    ctx.beginPath(); ctx.arc(0, 0, 52, Math.PI, 0); ctx.stroke();
+    drawRoundRect(-58, -10, 28, 40, 8, '#444', '#333', 1);
+    drawRoundRect(-54, -4, 20, 28, 5, '#666', null); // inner cushion left
+    drawRoundRect(30, -10, 28, 40, 8, '#444', '#333', 1);
+    drawRoundRect(34, -4, 20, 28, 5, '#666', null); // inner cushion right
     ctx.restore();
 
     // Snack wrapper
@@ -177,7 +179,7 @@ function drawDeskItems() {
         ctx.fillStyle = 'rgba(0,230,118,0.15)';
         [50,80,110,140].forEach(xo => { ctx.beginPath(); ctx.arc(rx+xo, ry+30, 14, 0, Math.PI*2); ctx.fill(); });
     }
-    drawText('TP-LEAK', rx+rw/2, ry+52, 11, '#444', 'center', null, 0, 'normal');
+    //drawText('TP-LEAK', rx+rw/2, ry+52, 11, '#444', 'center', null, 0, 'normal');
     if (GAME.routerFlashTimer > 0) {
         ctx.fillStyle = `rgba(255,255,255,${GAME.routerFlashTimer/150})`;
         ctx.roundRectPolyfill(rx, ry, rw, rh, 10); ctx.fill();
@@ -267,13 +269,13 @@ function drawDeskItems() {
     const akSz = 20, akGap2 = 3;
     const akc = GAME.state === 'PLAYING' && !kbBroken ? '#00E676' : '#555';
     drawRoundRect(arrowArea + akSz + akGap2, arrowTop, akSz, akSz, 4, akc, '#222', 1);
-    drawText('▲', arrowArea + akSz + akGap2 + akSz/2, arrowTop + akSz/2, 10, '#000', 'center');
+    drawText('▲', arrowArea + akSz + akGap2 + akSz/2, arrowTop + akSz/2, 16, '#000', 'center');
     drawRoundRect(arrowArea, arrowTop + akSz + akGap2, akSz, akSz, 4, akc, '#222', 1);
-    drawText('◀', arrowArea + akSz/2, arrowTop + akSz*1.5 + akGap2, 10, '#000', 'center');
+    drawText('◀', arrowArea + akSz/2, arrowTop + akSz*1.5 + akGap2, 16, '#000', 'center');
     drawRoundRect(arrowArea + akSz + akGap2, arrowTop + akSz + akGap2, akSz, akSz, 4, akc, '#222', 1);
-    drawText('▼', arrowArea + akSz + akGap2 + akSz/2, arrowTop + akSz*1.5 + akGap2, 10, '#000', 'center');
+    drawText('▼', arrowArea + akSz + akGap2 + akSz/2, arrowTop + akSz*1.5 + akGap2, 16, '#000', 'center');
     drawRoundRect(arrowArea + (akSz + akGap2)*2, arrowTop + akSz + akGap2, akSz, akSz, 4, akc, '#222', 1);
-    drawText('▶', arrowArea + (akSz + akGap2)*2 + akSz/2, arrowTop + akSz*1.5 + akGap2, 10, '#000', 'center');
+    drawText('▶', arrowArea + (akSz + akGap2)*2 + akSz/2, arrowTop + akSz*1.5 + akGap2, 16, '#000', 'center');
 
     if (kbBroken && Math.random() > 0.7) {
         ctx.fillStyle = '#FF6F00';
@@ -357,11 +359,11 @@ function drawDeskItems() {
     const plugY = py + 18 + bankH + 6;
     const plugH = th - bankH - 40;
     drawRoundRect(px + 14, plugY, tw - 28, plugH, 8, '#1A2332', '#2A3A4E', 2);
-    drawText('PLUGINS', px + tw/2, plugY + 14, 11, '#6B7A8E', 'center', null, 0, 'normal');
+    drawText('PLUGINS', px + tw/2, plugY + 14, 16, '#6B7A8E', 'center', null, 0, 'normal');
     let apps = [];
     Object.entries(GAME.upgrades).forEach(([k,v]) => { if(v) { const it = STORE_ITEMS.find(i=>i.id===k); if(it) apps.push({icon: it.icon, name: it.title}); }});
     if (apps.length === 0) {
-        drawText('None', px + tw/2, plugY + plugH/2, 14, '#444', 'center', null, 0, 'normal');
+        drawText('None', px + tw/2, plugY + plugH/2, 16, '#444', 'center', null, 0, 'normal');
     } else {
         for (let i = 0; i < apps.length && i < 10; i++) {
             const col = i % 5, row = Math.floor(i / 5);
@@ -418,7 +420,7 @@ function drawDeskItems() {
         // Lightning bolt
         drawText('\u26A1', ecx + 22, ecy + 33, 28, '#FFD54F', 'center');
         // Brand text
-        drawText('MONSTER', ecx + 22, ecy + 56, 8, '#76FF03', 'center', null, 0, 'bold');
+        drawText('MONSTER', ecx + 22, ecy + 56, 16, '#76FF03', 'center', null, 0, 'bold');
         // Silver rim top
         drawRoundRect(ecx + 2, ecy, 40, 8, 4, '#B0BEC5', '#78909C', 1);
         // Pull tab
@@ -433,96 +435,155 @@ function drawDeskItems() {
     }
 }
 
-// Cat peeking + tail — drawn BEFORE monitor frame so it appears behind 
+// Cat peeking from behind the DESK on the right side — drawn separately from main.js
 function drawCatTailBehind() {
     if (GAME.upgrades.treats) return;
     const t = performance.now() / 1000;
-    const M = MONITOR;
-    // Cat peeks from right side of monitor, top half of face visible
-    const peekX = M.x + M.w + 8;
-    const peekY = M.y + M.h * 0.35;
-    const earBob = Math.sin(t * 1.5) * 3;
+    const peekX = CW - 80;
+    const peekY = DESK_Y;
+    const headR = 30;
+    const earBob = Math.sin(t * 1.5) * 2;
 
-    // === CAT FACE (half visible, peeking from right edge of monitor) ===
-    // Head — orange circle, left half hidden behind monitor
-    ctx.fillStyle = '#FFA000';
-    ctx.beginPath(); ctx.arc(peekX + 10, peekY, 32, -Math.PI*0.5, Math.PI*0.5); ctx.fill();
-    // Darker cheek patch
-    ctx.fillStyle = '#E65100';
-    ctx.beginPath(); ctx.arc(peekX + 14, peekY + 10, 12, 0, Math.PI*2); ctx.fill();
-    // Left ear (triangle, peeking)
+    // === TAIL — starts behind/above the cat's head, curves upward with sway ===
+    const tailBaseX = peekX + 18;
+    const tailBaseY = peekY - headR - 5;
+    const segments = 10;
+    const segLen = 10;
+    const sway = Math.sin(t * 2.0) * 12;
+
+    // Build tail points curving upward and to the right
+    const tailPts = [];
+    for (let i = 0; i <= segments; i++) {
+        const frac = i / segments;
+        const tx = tailBaseX + frac * 40 + Math.sin(t * 2.2 + i * 0.6) * (4 + frac * sway);
+        const ty = tailBaseY - i * segLen + Math.cos(t * 1.8 + i * 0.5) * (3 + frac * 5);
+        tailPts.push({ x: tx, y: ty });
+    }
+
+    // Draw main tail (orange)
+    ctx.strokeStyle = '#FFA000'; ctx.lineWidth = 10; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(tailPts[0].x, tailPts[0].y);
+    for (let i = 1; i < tailPts.length; i++) {
+        ctx.lineTo(tailPts[i].x, tailPts[i].y);
+    }
+    ctx.stroke();
+
+    // Tabby stripes on tail (darker orange on alternating segments)
+    ctx.strokeStyle = '#E65100'; ctx.lineWidth = 6; ctx.lineCap = 'round';
+    for (let i = 0; i < tailPts.length - 1; i++) {
+        if (i % 2 === 0) {
+            ctx.beginPath();
+            ctx.moveTo(tailPts[i].x, tailPts[i].y);
+            ctx.lineTo(tailPts[i + 1].x, tailPts[i + 1].y);
+            ctx.stroke();
+        }
+    }
+
+    // Tail tip — slightly thinner, lighter
+    const tip = tailPts[tailPts.length - 1];
+    const tipPrev = tailPts[tailPts.length - 2];
+    ctx.strokeStyle = '#FF8F00'; ctx.lineWidth = 7; ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(tipPrev.x, tipPrev.y);
+    ctx.lineTo(tip.x + Math.sin(t * 3) * 5, tip.y - 6);
+    ctx.stroke();
+
+    // === CAT FACE — top half semicircle above desk line (forehead, ears, eyes) ===
+    // Clip to only show above the desk line
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 0, CW, peekY);
+    ctx.clip();
+
+    // Head — semicircle (top half)
     ctx.fillStyle = '#FFA000';
     ctx.beginPath();
-    ctx.moveTo(peekX - 2, peekY - 24 + earBob);
-    ctx.lineTo(peekX + 12, peekY - 38 + earBob);
-    ctx.lineTo(peekX + 20, peekY - 20 + earBob);
+    ctx.arc(peekX, peekY, headR, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Forehead tabby stripe
+    ctx.fillStyle = '#E65100';
+    ctx.beginPath();
+    ctx.moveTo(peekX - 4, peekY - headR + 5);
+    ctx.lineTo(peekX, peekY - headR + 14);
+    ctx.lineTo(peekX + 4, peekY - headR + 5);
+    ctx.closePath();
+    ctx.fill();
+
+    // Left ear
+    ctx.fillStyle = '#FFA000';
+    ctx.beginPath();
+    ctx.moveTo(peekX - 20, peekY - 22 + earBob);
+    ctx.lineTo(peekX - 28, peekY - 50 + earBob);
+    ctx.lineTo(peekX - 8, peekY - 28 + earBob);
     ctx.closePath(); ctx.fill();
-    // Inner ear
+    // Left inner ear
     ctx.fillStyle = '#FFAB91';
     ctx.beginPath();
-    ctx.moveTo(peekX + 2, peekY - 24 + earBob);
-    ctx.lineTo(peekX + 12, peekY - 34 + earBob);
-    ctx.lineTo(peekX + 18, peekY - 22 + earBob);
+    ctx.moveTo(peekX - 19, peekY - 26 + earBob);
+    ctx.lineTo(peekX - 25, peekY - 44 + earBob);
+    ctx.lineTo(peekX - 11, peekY - 30 + earBob);
     ctx.closePath(); ctx.fill();
-    // Eye — big, round, looking at player
-    const blinkCycle = Math.floor(t * 0.3) % 8;
-    const eyeOpen = blinkCycle !== 0;
-    ctx.fillStyle = '#1B5E20';
-    if (eyeOpen) {
-        ctx.beginPath(); ctx.ellipse(peekX + 18, peekY - 6, 8, 10, 0, 0, Math.PI*2); ctx.fill();
-        // Pupil
-        ctx.fillStyle = '#000';
-        ctx.beginPath(); ctx.ellipse(peekX + 18, peekY - 6, 3, 8, 0, 0, Math.PI*2); ctx.fill();
-        // Eye shine
-        ctx.fillStyle = '#FFF';
-        ctx.beginPath(); ctx.arc(peekX + 21, peekY - 9, 2.5, 0, Math.PI*2); ctx.fill();
-    } else {
-        // Blink — horizontal line
-        ctx.strokeStyle = '#1B5E20'; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.moveTo(peekX + 10, peekY - 6); ctx.lineTo(peekX + 26, peekY - 6); ctx.stroke();
-    }
-    // Nose
-    ctx.fillStyle = '#FF8A80';
-    ctx.beginPath();
-    ctx.moveTo(peekX + 16, peekY + 4);
-    ctx.lineTo(peekX + 13, peekY + 8);
-    ctx.lineTo(peekX + 19, peekY + 8);
-    ctx.closePath(); ctx.fill();
-    // Whiskers
-    ctx.strokeStyle = '#FFF'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(peekX + 20, peekY + 6); ctx.lineTo(peekX + 50, peekY + 2); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(peekX + 20, peekY + 8); ctx.lineTo(peekX + 48, peekY + 12); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(peekX + 20, peekY + 10); ctx.lineTo(peekX + 46, peekY + 20); ctx.stroke();
 
-    // === TAIL — curving up from behind the monitor, above the cat ===
-    const tailBaseX = peekX - 5;
-    const tailBaseY = peekY + 28;
-    ctx.strokeStyle = '#FFA000'; ctx.lineWidth = 12; ctx.lineCap = 'round';
+    // Right ear
+    ctx.fillStyle = '#FFA000';
     ctx.beginPath();
-    ctx.moveTo(tailBaseX, tailBaseY);
-    for (let i = 1; i <= 8; i++) {
-        const ty = tailBaseY + i * 12;
-        const tx = tailBaseX + Math.sin(t * 2.5 + i * 0.5) * (8 + i * 2.5) + i * 3;
-        ctx.lineTo(tx, ty);
+    ctx.moveTo(peekX + 20, peekY - 22 + earBob);
+    ctx.lineTo(peekX + 28, peekY - 50 + earBob);
+    ctx.lineTo(peekX + 8, peekY - 28 + earBob);
+    ctx.closePath(); ctx.fill();
+    // Right inner ear
+    ctx.fillStyle = '#FFAB91';
+    ctx.beginPath();
+    ctx.moveTo(peekX + 19, peekY - 26 + earBob);
+    ctx.lineTo(peekX + 25, peekY - 44 + earBob);
+    ctx.lineTo(peekX + 11, peekY - 30 + earBob);
+    ctx.closePath(); ctx.fill();
+
+    // === EYES — both visible, pupils track mouse ===
+    const blinkCycle = Math.floor(t * 0.4) % 6;
+    const eyeOpen = blinkCycle !== 0;
+    const eyeY = peekY - 10;
+    const leftEyeX = peekX - 12;
+    const rightEyeX = peekX + 12;
+
+    if (eyeOpen) {
+        // Left eye white
+        ctx.fillStyle = '#FFF';
+        ctx.beginPath(); ctx.ellipse(leftEyeX, eyeY, 8, 9, 0, 0, Math.PI * 2); ctx.fill();
+        // Left iris
+        const angL = Math.atan2((GAME.mouseY || 0) - eyeY, (GAME.mouseX || 0) - leftEyeX);
+        const pupOffL = 3;
+        ctx.fillStyle = '#1B5E20';
+        ctx.beginPath(); ctx.ellipse(leftEyeX + Math.cos(angL) * pupOffL, eyeY + Math.sin(angL) * pupOffL, 5, 7, 0, 0, Math.PI * 2); ctx.fill();
+        // Left pupil
+        ctx.fillStyle = '#000';
+        ctx.beginPath(); ctx.ellipse(leftEyeX + Math.cos(angL) * pupOffL, eyeY + Math.sin(angL) * pupOffL, 2, 5, 0, 0, Math.PI * 2); ctx.fill();
+        // Left shine
+        ctx.fillStyle = '#FFF';
+        ctx.beginPath(); ctx.arc(leftEyeX + Math.cos(angL) * pupOffL + 2, eyeY + Math.sin(angL) * pupOffL - 2, 2, 0, Math.PI * 2); ctx.fill();
+
+        // Right eye white
+        ctx.fillStyle = '#FFF';
+        ctx.beginPath(); ctx.ellipse(rightEyeX, eyeY, 8, 9, 0, 0, Math.PI * 2); ctx.fill();
+        // Right iris
+        const angR = Math.atan2((GAME.mouseY || 0) - eyeY, (GAME.mouseX || 0) - rightEyeX);
+        const pupOffR = 3;
+        ctx.fillStyle = '#1B5E20';
+        ctx.beginPath(); ctx.ellipse(rightEyeX + Math.cos(angR) * pupOffR, eyeY + Math.sin(angR) * pupOffR, 5, 7, 0, 0, Math.PI * 2); ctx.fill();
+        // Right pupil
+        ctx.fillStyle = '#000';
+        ctx.beginPath(); ctx.ellipse(rightEyeX + Math.cos(angR) * pupOffR, eyeY + Math.sin(angR) * pupOffR, 2, 5, 0, 0, Math.PI * 2); ctx.fill();
+        // Right shine
+        ctx.fillStyle = '#FFF';
+        ctx.beginPath(); ctx.arc(rightEyeX + Math.cos(angR) * pupOffR + 2, eyeY + Math.sin(angR) * pupOffR - 2, 2, 0, Math.PI * 2); ctx.fill();
+    } else {
+        // Blink — horizontal lines for closed eyes
+        ctx.strokeStyle = '#1B5E20'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(leftEyeX - 6, eyeY); ctx.lineTo(leftEyeX + 6, eyeY); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(rightEyeX - 6, eyeY); ctx.lineTo(rightEyeX + 6, eyeY); ctx.stroke();
     }
-    ctx.stroke();
-    // Tabby stripes on tail
-    ctx.strokeStyle = '#E65100'; ctx.lineWidth = 6;
-    ctx.beginPath();
-    let started = false;
-    for (let i = 2; i <= 7; i++) {
-        const ty = tailBaseY + i * 12;
-        const tx = tailBaseX + Math.sin(t * 2.5 + i * 0.5) * (8 + i * 2.5) + i * 3;
-        if (i % 2 === 0) { ctx.moveTo(tx, ty); started = true; } else if (started) { ctx.lineTo(tx, ty); }
-    }
-    ctx.stroke();
-    // Tail tip
-    const tipI = 8;
-    const tipY = tailBaseY + tipI * 12;
-    const tipX = tailBaseX + Math.sin(t * 2.5 + tipI * 0.5) * (8 + tipI * 2.5) + tipI * 3;
-    ctx.strokeStyle = '#FF8F00'; ctx.lineWidth = 9; ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(tipX, tipY);
-    ctx.lineTo(tipX + Math.sin(t * 3) * 6 + 5, tipY + 10);
-    ctx.stroke();
+
+    ctx.restore(); // end clip
 }

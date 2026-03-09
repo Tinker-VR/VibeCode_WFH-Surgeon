@@ -8,15 +8,15 @@ function drawScreenMenu() {
     ctx.beginPath(); ctx.roundRectPolyfill(M.sx, M.uiY, M.sw, M.uiH, 4); ctx.clip();
     drawRect(M.sx, M.uiY, M.sw, M.uiH, 'rgba(8,18,35,0.95)');
     const cy = M.uiY + M.uiH/2;
-    drawText('WFH SURGEON', M.sx+M.sw/2, cy - 22, 42, '#FFF', 'center', 'rgba(0,0,0,0.5)', 4);
-    const btnW = 200, btnH = 44, gap = 25;
+    drawText('Work-From-Home Surgeon', M.sx+M.sw/2, cy - 32, 40, '#FFF', 'center', 'rgba(0,0,0,0.5)', 4);
+    const btnW = 175, btnH = 40, gap = 15;
     const total = btnW*3+gap*2;
     const bx0 = M.sx + (M.sw - total)/2;
-    const by = cy + 10;
-    drawButton('START', bx0, by, btnW, btnH, COLORS.green, 22, true);
+    const by = cy - 5;
+    drawButton('START', bx0, by, btnW, btnH, COLORS.green, 20, true);
     drawButton('SHOP', bx0+btnW+gap, by, btnW, btnH, COLORS.gold, 20);
-    drawButton('HELP', bx0+(btnW+gap)*2, by, btnW, btnH, '#1976D2', 22);
-    drawText('Vibe coded by Michael at Tinker Studio', M.sx+M.sw/2, M.uiY+M.uiH-6, 11, '#667', 'center', null, 0, 'normal');
+    drawButton('HELP', bx0+(btnW+gap)*2, by, btnW, btnH, '#1976D2', 20);
+    drawText('Created by Michael at Tinker Studio', M.sx+M.sw/2, M.uiY+M.uiH-15, 16, '#667', 'center', null, 0, 'normal');
     ctx.restore();
 }
 
@@ -26,12 +26,14 @@ function drawScreenPlaying() {
     ctx.beginPath(); ctx.roundRectPolyfill(M.sx, M.uiY, M.sw, M.uiH, 4); ctx.clip();
     drawRect(M.sx, M.uiY, M.sw, M.uiH, 'rgba(8,18,35,0.95)');
 
-    // Info text — combined into one line for more arrow space
-    drawText(`${getRankName(GAME.rank)}  ·  Phase ${GAME.phasesCompleted}/${GAME.phasesNeeded}  ·  ${GAME.flavorText}`, M.sx+M.sw/2, M.uiY+14, 15, '#AAB8CC', 'center', null, 0, 'normal');
+    // Info text — rank/phase, operation, patient on 3 lines
+    drawText(getRankName(GAME.rank) + ' | Phase ' + (GAME.phasesCompleted+1) + '/' + GAME.phasesNeeded, M.sx+M.sw/2, M.uiY+18, 18, '#AAB8CC', 'center', null, 0, 'bold');
+    drawText(GAME.operationName, M.sx+M.sw/2, M.uiY+38, 16, '#AAB8CC', 'center', null, 0, 'normal');
+    drawText('Patient: ' + GAME.patientName, M.sx+M.sw/2, M.uiY+54, 16, '#AAB8CC', 'center', null, 0, 'normal');
 
-    // Arrow keys — more vertical space
-    const arrowY = M.uiY + 28;
-    const maxSqH = M.uiH - 28 - 24;
+    // Arrow keys
+    const arrowY = M.uiY + 68;
+    const maxSqH = M.uiH - 68 - 24;
     const sqW = Math.min(65, maxSqH);
     const sqGap = 8;
     const availW = M.sw - 50;
@@ -82,7 +84,7 @@ function drawScreenStore() {
     // Header — clean shop branding
     drawRect(M.sx, M.sy, M.sw, 58, '#161B22');
     drawText('PURCHASE PLUGINS', M.sx+M.sw/2, M.sy+25, 30, '#FFF', 'center');
-    drawText('All plugins last ONE ROUND only!', M.sx+M.sw/2, M.sy+48, 15, '#FF9800', 'center', null, 0, 'normal');
+    drawText('All plugins last ONE ROUND only!', M.sx+M.sw/2, M.sy+48, 16, '#FF9800', 'center', null, 0, 'normal');
 
     drawButton('\u2190 BACK', M.sx+20, M.sy+14, 110, 38, '#444', 16);
 
@@ -104,13 +106,13 @@ function drawScreenStore() {
         const iy = M.sy + 78 + row * 118;
         drawShadowRoundRect(ix, iy, cardW, cardH, 10, '#1A2332', '#2A3A4E', 2);
         drawText(item.icon, ix+28, iy+30, 28, '#FFF', 'center');
-        drawText(item.title, ix+50, iy+20, 18, '#FFF', 'left');
-        drawText(item.desc, ix+50, iy+42, 14, '#7889A0', 'left', null, 0, 'normal');
+        drawTextTruncated(item.title, ix+50, iy+20, 18, '#FFF', cardW-58, 'left');
+        drawTextTruncated(item.desc, ix+50, iy+42, 16, '#7889A0', cardW-58, 'left', null, 0, 'normal');
         const isMax = item.consumable && GAME.hearts >= GAME.maxHearts;
         const owned = !item.consumable && GAME.upgrades[item.id];
         const bc = (owned||isMax) ? '#555' : GAME.cash>=item.price ? COLORS.gold : '#555';
         const bt = owned ? 'OWNED' : isMax ? 'FULL' : `$${item.price}`;
-        drawButton(bt, ix+cardW/2-50, iy+78, 100, 26, bc, 14);
+        drawButton(bt, ix+cardW/2-50, iy+78, 100, 26, bc, 16);
     });
 
     ctx.restore();
@@ -201,19 +203,26 @@ function drawHelpModal() {
         drawText('3 perfect sequences in a row = bonus heart!', cx, cy+125, 18, COLORS.green, 'center', null, 0, 'normal');
     } else if (GAME.helpPage === 2) {
         drawText('WFH HAZARDS', cx, cy-100, 34, '#FFA000', 'center');
-        const hz1 = [{i:'\uD83D\uDC31',a:'Click 3x'},{i:'\u2615',a:'Wipe it'},{i:'\uD83D\uDCF6',a:'Click router'},{i:'\uD83D\uDD0B',a:'Plug in'}];
+        const hz1 = [{i:'\uD83D\uDC31',a:'Click 3x'},{i:'\u2615',a:'Click & wipe'},{i:'\uD83D\uDCF6',a:'Smash router'},{i:'\uD83D\uDD0C',a:'Drag plug'}];
+        const hzCardW = 88, hzGap = 10;
+        const hz1TotalW = 4*hzCardW + 3*hzGap;
+        const hz1StartX = cx - hz1TotalW/2;
         for (let i = 0; i < 4; i++) {
-            drawRoundRect(cx-165+i*88, cy-55, 72, 72, 12, '#2A3A4E', null);
-            drawText(hz1[i].i, cx-165+i*88+36, cy-22, 28, '#FFF', 'center');
-            drawText(hz1[i].a, cx-165+i*88+36, cy+10, 11, '#AAA', 'center', null, 0, 'normal');
+            const hx = hz1StartX + i*(hzCardW+hzGap);
+            drawRoundRect(hx, cy-55, hzCardW, hzCardW, 12, '#2A3A4E', null);
+            drawText(hz1[i].i, hx+hzCardW/2, cy-55+hzCardW/2-10, 28, '#FFF', 'center');
+            drawText(hz1[i].a, hx+hzCardW/2, cy-55+hzCardW+16, 16, '#AAA', 'center', null, 0, 'normal');
         }
         const hz2 = [{i:'\uD83D\uDCBC',a:'Close popup'},{i:'\uD83D\uDD27',a:'Fix screws'},{i:'\uD83E\uDDA0',a:'Zap viruses'}];
+        const hz2TotalW = 3*hzCardW + 2*hzGap;
+        const hz2StartX = cx - hz2TotalW/2;
         for (let i = 0; i < 3; i++) {
-            drawRoundRect(cx-120+i*88, cy+30, 72, 72, 12, '#2A3A4E', null);
-            drawText(hz2[i].i, cx-120+i*88+36, cy+63, 28, '#FFF', 'center');
-            drawText(hz2[i].a, cx-120+i*88+36, cy+95, 11, '#AAA', 'center', null, 0, 'normal');
+            const hx = hz2StartX + i*(hzCardW+hzGap);
+            drawRoundRect(hx, cy+50, hzCardW, hzCardW, 12, '#2A3A4E', null);
+            drawText(hz2[i].i, hx+hzCardW/2, cy+50+hzCardW/2-10, 28, '#FFF', 'center');
+            drawText(hz2[i].a, hx+hzCardW/2, cy+50+hzCardW+16, 16, '#AAA', 'center', null, 0, 'normal');
         }
-        drawText('Deal with interruptions to get back to surgery!', cx, cy+130, 19, '#CCC', 'center', null, 0, 'normal');
+        drawText('Deal with interruptions to get back to surgery!', cx, cy+160, 19, '#CCC', 'center', null, 0, 'normal');
     } else {
         drawText('EARN & UPGRADE', cx, cy-100, 34, COLORS.gold, 'center');
         drawText('\uD83D\uDCB0', cx, cy-30, 66, '#FFF', 'center');

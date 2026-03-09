@@ -28,6 +28,12 @@ function drawMuteButton() {
     drawText(AudioEngine.enabled ? '🔊' : '🔇', mb.x+mb.w/2, mb.y+mb.h/2, 18, AudioEngine.enabled ? '#FFF' : '#888', 'center');
 }
 
+function drawQuitButton() {
+    const qb = GAME.quitBtn, hover = isHover(qb.x, qb.y, qb.w, qb.h);
+    drawRoundRect(qb.x, qb.y, qb.w, qb.h, 8, hover ? '#633' : 'rgba(40,0,0,0.5)', null);
+    drawText('✕', qb.x+qb.w/2, qb.y+qb.h/2, 18, hover ? '#F88' : '#A66', 'center');
+}
+
 function drawPauseButton() {
     if (GAME.state !== 'PLAYING') return;
     const pb = GAME.pauseBtn, hover = isHover(pb.x, pb.y, pb.w, pb.h);

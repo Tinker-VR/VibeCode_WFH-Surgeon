@@ -10,7 +10,7 @@ window.addEventListener('mousemove', (e) => {
         GAME.plugPos.x = GAME.mouseX;
         GAME.plugPos.y = GAME.mouseY;
     }
-    if (GAME.hazard === 'coffee') {
+    if (GAME.hazard === 'coffee' && GAME.coffeeWiping) {
         const M = MONITOR;
         const splatX = M.sx + M.sw/2, splatY = M.sy + M.sh/2;
         if (Math.hypot(GAME.mouseX - splatX, GAME.mouseY - splatY) < M.sw*0.45) {
@@ -28,6 +28,7 @@ window.addEventListener('mouseup', (e) => {
         GAME.batteryDrag = false;
         if (Math.hypot(GAME.plugPos.x - GAME.socketPos.x, GAME.plugPos.y - GAME.socketPos.y) < 100) clearHazard();
     }
+    if (GAME.hazard === 'coffee') GAME.coffeeWiping = false;
 });
 
 window.addEventListener('mousedown', (e) => {
@@ -55,6 +56,12 @@ window.addEventListener('mousedown', (e) => {
         AudioEngine.enabled = !AudioEngine.enabled;
         if (!AudioEngine.enabled) AudioEngine.stopBGM();
         else AudioEngine.startBGM();
+        return;
+    }
+
+    const qb = GAME.quitBtn;
+    if (isHover(qb.x, qb.y, qb.w, qb.h)) {
+        location.reload();
         return;
     }
 
@@ -212,17 +219,30 @@ window.addEventListener('mousedown', (e) => {
         }
         else if (GAME.hazard === 'lag') {
             if (isHover(10, DESK_Y + 5, 200, 65)) {
-                GAME.routerClicks++; GAME.routerFlashTimer = 150; GAME.routerShakeTimer = 200; AudioEngine.playWifiStatic();
+                GAME.routerClicks++; GAME.routerFlashTimer = 150; GAME.routerShakeTimer = 200; GAME.routerSmashAnim = 300; AudioEngine.playWifiStatic();
                 if (GAME.routerClicks >= 3) clearHazard();
             }
         }
+        else if (GAME.hazard === 'coffee') {
+            GAME.coffeeWiping = true;
+        }
         else if (GAME.hazard === 'kbbreak') {
-            // Only handle screwdriver pickup click — fixing screws is hover-based (in main.js)
             if (!GAME.hasScrewdriver) {
-                if (Math.hypot(GAME.mouseX - GAME.screwdriverPos.x, GAME.mouseY - GAME.screwdriverPos.y) < 55) {
+                // Pick up the screwdriver
+                if (Math.hypot(GAME.mouseX - GAME.screwdriverPos.x, GAME.mouseY - GAME.screwdriverPos.y) < 80) {
                     GAME.hasScrewdriver = true;
                     AudioEngine.playClick();
                 }
+            } else {
+                // Click-to-fix screws (screwdriver must be near screw)
+                const screws = getKBScrewPositions();
+                screws.forEach((sp, idx) => {
+                    if (!GAME.kbScrews[idx] && Math.hypot(GAME.mouseX - sp.x, GAME.mouseY - sp.y) < 50) {
+                        GAME.kbScrews[idx] = true;
+                        AudioEngine.playScrewdriver();
+                        if (GAME.kbScrews.every(s => s)) clearHazard();
+                    }
+                });
             }
         }
         else if (GAME.hazard === 'malware') {
