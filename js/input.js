@@ -67,13 +67,13 @@ window.addEventListener('mousedown', (e) => {
             return;
         }
         // RESUME button
-        if (isHover(cx - 110, cy + 100, 220, 55)) {
+        if (isHover(cx - 110, cy + 75, 220, 55)) {
             AudioEngine.playClick();
             GAME.paused = false;
             return;
         }
         // QUIT button
-        if (isHover(cx - 110, cy + 170, 220, 55)) {
+        if (isHover(cx - 110, cy + 145, 220, 55)) {
             AudioEngine.playClick();
             GAME.pauseQuitConfirm = true;
             return;

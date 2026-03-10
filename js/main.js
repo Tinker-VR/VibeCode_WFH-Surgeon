@@ -12,9 +12,9 @@ function loop(timestamp) {
         // Hazard slowdown mechanic: slow drain during active hazards
         let drainRate = 1;
         if (GAME.hazard) {
-            drainRate = 0.2 + (GAME.rank / 14) * 0.7;
+            drainRate = 0.5 + (GAME.rank / 14) * 0.4;
         }
-        const anesDrainMult = GAME.upgrades.energy_anes ? 0.6 : 1;
+        const anesDrainMult = GAME.upgrades.energy_anes ? 0.6 : 1.3;
         GAME.anesthesia -= dt * drainRate * anesDrainMult;
         GAME.phaseTimer -= dt * drainRate;
         GAME.hazardTimer += dt;

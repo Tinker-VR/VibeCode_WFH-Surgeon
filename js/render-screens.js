@@ -16,7 +16,7 @@ function drawScreenMenu() {
     drawButton('START', bx0, by, btnW, btnH, COLORS.green, 20, true);
     drawButton('SHOP', bx0+btnW+gap, by, btnW, btnH, COLORS.gold, 20);
     drawButton('HELP', bx0+(btnW+gap)*2, by, btnW, btnH, '#1976D2', 20);
-    drawText('Created by Michael at Tinker Studio', M.sx+M.sw/2, M.uiY+M.uiH-15, 16, '#667', 'center', null, 0, 'normal');
+    drawText('Created by Michael at Tinker Studio (build 03/10/26)', M.sx+M.sw/2, M.uiY+M.uiH-15, 14, '#667', 'center', null, 0, 'normal');
     ctx.restore();
 }
 
@@ -29,63 +29,79 @@ function drawScreenPlaying() {
 
     const pad = 12;
     const topY = M.uiY + 10;
-    const contentY = topY + 24;
-    const contentH = M.uiH - 38;
+    const contentY = topY + 10;
+    const contentH = M.uiH - 25;
 
     // === LEFT PANEL: Hospital Form (operation + patient) ===
     const formX = M.sx + pad;
-    const formY = contentY + 2;
+    const formY = contentY + 10;
     const formW = 260;
-    const formH = contentH - 8;
-    drawRoundRect(formX, formY, formW, formH, 10, '#111828', '#2A3A4E', 2);
-    // Level + Phase dots inside form top
-    drawText(getRankName(GAME.rank), formX + 14, formY + 14, 16, '#DDE4EE', 'left', null, 0, 'bold');
-    // Phase dots after rank text
-    const dotStartX = formX + 14;
-    const dotY = formY + 32;
-    for (let i = 0; i < GAME.phasesNeeded; i++) {
-        const filled = i < GAME.phasesCompleted;
-        const current = i === GAME.phasesCompleted;
-        ctx.fillStyle = filled ? COLORS.green : current ? COLORS.gold : '#334';
-        ctx.beginPath(); ctx.arc(dotStartX + i * 18, dotY, 5, 0, Math.PI*2); ctx.fill();
-        if (current) {
-            ctx.strokeStyle = COLORS.gold; ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.arc(dotStartX + i * 18, dotY, 7, 0, Math.PI*2); ctx.stroke();
-        }
-    }
-    // Form labels and values — with text wrapping for overflow
-    drawText('OPERATION', formX + 14, formY + 50, 16, '#5A6A80', 'left', null, 0, 'normal');
-    // Truncate operation name if too wide
+    const formH = contentH - 2;
+    drawRoundRect(formX, formY - 15, formW, formH, 10, '#111828', '#2A3A4E', 2);
+    // Level/Rank — auto-scale if too wide
+    const rankLabel = getRankName(GAME.rank);
+    ctx.font = "bold 16px 'Segoe UI', Tahoma, sans-serif";
+    let rankSize = 16;
+    if (ctx.measureText(rankLabel).width > formW - 28) rankSize = Math.max(16, Math.floor(16 * (formW - 28) / ctx.measureText(rankLabel).width));
+    drawText(rankLabel, formX + 14, formY + 8, rankSize, '#DDE4EE', 'left', null, 0, 'bold');
+    // Form labels and values — word wrap for long names
+    drawText('OPERATION', formX + 14, formY + 32, 16, '#5A6A80', 'left', null, 0, 'normal');
+    // Operation name — wrap to 2 lines if needed
+    const opMaxW = formW - 28;
     ctx.font = "bold 18px 'Segoe UI', Tahoma, sans-serif";
     let opName = GAME.operationName;
-    if (ctx.measureText(opName).width > formW - 28) {
-        while (ctx.measureText(opName + '...').width > formW - 28 && opName.length > 3) opName = opName.slice(0, -1);
-        opName += '...';
+    let opLine2Y = 0;
+    if (ctx.measureText(opName).width > opMaxW) {
+        ctx.font = "bold 16px 'Segoe UI', Tahoma, sans-serif";
+        if (ctx.measureText(opName).width > opMaxW) {
+            // Word wrap into 2 lines
+            const words = opName.split(' ');
+            let line1 = '', line2 = '';
+            for (const w of words) {
+                const test = line1 ? line1 + ' ' + w : w;
+                if (ctx.measureText(test).width <= opMaxW) line1 = test;
+                else line2 += (line2 ? ' ' : '') + w;
+            }
+            drawText(line1, formX + 14, formY + 50, 16, '#FFF', 'left', null, 0, 'bold');
+            if (line2) { drawText(line2, formX + 14, formY + 66, 16, '#FFF', 'left', null, 0, 'bold'); opLine2Y = 16; }
+        } else {
+            drawText(opName, formX + 14, formY + 50, 16, '#FFF', 'left', null, 0, 'bold');
+        }
+    } else {
+        drawText(opName, formX + 14, formY + 50, 18, '#FFF', 'left', null, 0, 'bold');
     }
-    drawText(opName, formX + 14, formY + 70, 18, '#FFF', 'left', null, 0, 'bold');
-    drawText('PATIENT', formX + 14, formY + 92, 16, '#5A6A80', 'left', null, 0, 'normal');
+    drawText('PATIENT', formX + 14, formY + 80 + opLine2Y, 16, '#5A6A80', 'left', null, 0, 'normal');
+    // Patient name — scale down or wrap
     ctx.font = "normal 16px 'Segoe UI', Tahoma, sans-serif";
     let patName = GAME.patientName;
-    if (ctx.measureText(patName).width > formW - 28) {
-        while (ctx.measureText(patName + '...').width > formW - 28 && patName.length > 3) patName = patName.slice(0, -1);
-        patName += '...';
+    if (ctx.measureText(patName).width > opMaxW) {
+        const words = patName.split(' ');
+        let line1 = '', line2 = '';
+        for (const w of words) {
+            const test = line1 ? line1 + ' ' + w : w;
+            if (ctx.measureText(test).width <= opMaxW) line1 = test;
+            else line2 += (line2 ? ' ' : '') + w;
+        }
+        drawText(line1, formX + 14, formY + 97 + opLine2Y, 16, '#DDE4EE', 'left', null, 0, 'normal');
+        if (line2) drawText(line2, formX + 14, formY + 113 + opLine2Y, 16, '#DDE4EE', 'left', null, 0, 'normal');
+    } else {
+        drawText(patName, formX + 14, formY + 97 + opLine2Y, 16, '#DDE4EE', 'left', null, 0, 'normal');
     }
-    drawText(patName, formX + 14, formY + 110, 16, '#DDE4EE', 'left', null, 0, 'normal');
 
     // === CENTER: Ring/Donut Timer ===
-    const ringCX = formX + formW + 60;
-    const ringCY = formY + formH / 2 + 2;
-    const ringR = 42;
-    const ringInner = 28;
+    const ringCX = formX + formW + 82;
+    const ringCY = formY + formH / 2 - 16;
+    const ringR = 55;
+    const ringInner = 35;
     const pPct = Math.max(0, GAME.phaseTimer / GAME.phaseTimerMax);
     const ringColor = pPct > 0.5 ? COLORS.green : pPct > 0.2 ? COLORS.gold : COLORS.red;
 
-    // Ring glow
+    /*// Ring glow
     if (pPct <= 0.2) {
         ctx.shadowColor = COLORS.red; ctx.shadowBlur = 12 + Math.sin(now/150)*6;
     } else {
         ctx.shadowColor = ringColor; ctx.shadowBlur = 6;
-    }
+    }*/
     // Background ring
     ctx.beginPath(); ctx.arc(ringCX, ringCY, ringR, 0, Math.PI*2);
     ctx.arc(ringCX, ringCY, ringInner, 0, Math.PI*2, true);
@@ -101,7 +117,7 @@ function drawScreenPlaying() {
     // Medical emoji inside
     const emojiPulse = 1 + Math.sin(now / 400) * 0.06;
     ctx.save(); ctx.translate(ringCX, ringCY); ctx.scale(emojiPulse, emojiPulse);
-    drawText(GAME.sequenceEmoji || '💉', 0, 0, 28, '#FFF', 'center');
+    drawText(GAME.sequenceEmoji || '💉', 0, 0, 40, '#FFF', 'center');
     ctx.restore();
 
     // === RIGHT PANEL: Robot Command Sequence ===
@@ -109,13 +125,28 @@ function drawScreenPlaying() {
     const arrowContW = M.sx + M.sw - pad - arrowX;
     const arrowContY = formY;
     const arrowContH = formH;
-    drawRoundRect(arrowX, arrowContY, arrowContW, arrowContH, 10, '#111828', '#2A3A4E', 2);
+    drawRoundRect(arrowX, arrowContY - 15, arrowContW, arrowContH, 10, '#111828', '#2A3A4E', 2);
     drawText('ROBOT COMMAND SEQUENCE', arrowX + 14, arrowContY + 14, 16, '#5A6A80', 'left', null, 0, 'normal');
+    // Phase dots — right side of header
+    const dotGap = GAME.phasesNeeded > 8 ? 12 : 16;
+    const dotTotalW = GAME.phasesNeeded * dotGap;
+    const dotStartX = arrowX + arrowContW - 14 - dotTotalW;
+    const dotY = arrowContY + 14;
+    for (let i = 0; i < GAME.phasesNeeded; i++) {
+        const filled = i < GAME.phasesCompleted;
+        const current = i === GAME.phasesCompleted;
+        ctx.fillStyle = filled ? COLORS.green : current ? COLORS.gold : '#334';
+        ctx.beginPath(); ctx.arc(dotStartX + i * dotGap, dotY, 5, 0, Math.PI*2); ctx.fill();
+        if (current) {
+            ctx.strokeStyle = COLORS.gold; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.arc(dotStartX + i * dotGap, dotY, 7, 0, Math.PI*2); ctx.stroke();
+        }
+    }
 
     // Arrow keys with horizontal scroll
     const sqW = 48;
     const sqGap = 6;
-    const arrowAreaY = arrowContY + 26;
+    const arrowAreaY = arrowContY + 15;
     const arrowAreaH = arrowContH - 32;
     const arrowCenterY2 = arrowAreaY + arrowAreaH / 2;
     const visibleW = arrowContW - 16;
@@ -200,7 +231,7 @@ function drawScreenStore() {
         const owned = !item.consumable && GAME.upgrades[item.id];
         const bc = (owned||isMax) ? '#555' : GAME.cash>=item.price ? COLORS.gold : '#555';
         const bt = owned ? 'OWNED' : isMax ? 'FULL' : `$${item.price}`;
-        drawButton(bt, ix+cardW/2-50, iy+78, 100, 26, bc, 16);
+        drawButton(bt, ix+cardW/2-50, iy+68, 100, 26, bc, 16);
     });
 
     // Purchase flash overlay
@@ -242,21 +273,23 @@ function drawScreenResolution() {
             'Chief of Vibes','Organ Freelancer','Insurance Nightmare','Dr. Google','Scalpel Influencer',
             'Surgical Shitposter','Liability Speedrunner','God Complex','Board-Certified War Criminal','Literally God'];
         drawText(`Promoted to ${rankNames[GAME.rank] || 'Literally God'}`, M.sx+M.sw/2, M.sy+155, 26, COLORS.gold, 'center', 'rgba(0,0,0,0.4)', 3);
-        // Payout breakdown
-        drawText(`+$${200+GAME.rank*100} base  +$${GAME.hearts*(50+GAME.rank*10)} hearts  +$${Math.floor((GAME.anesthesia/1000)*10)} speed`, M.sx+M.sw/2, M.sy+195, 16, '#6B7A8E', 'center', null, 0, 'normal');
-        drawText(`$${GAME.payout}`, M.sx+M.sw/2, M.sy+240, 56, COLORS.green, 'center', 'rgba(0,0,0,0.5)', 4);
+        // Payout breakdown — clear white text, min 18px
+        drawText(`+$${200+GAME.rank*100} base`, M.sx+M.sw/2 - 180, M.sy+195, 20, '#DDE4EE', 'center', null, 0, 'bold');
+        drawText(`+$${GAME.hearts*(50+GAME.rank*10)} hearts`, M.sx+M.sw/2, M.sy+195, 20, '#DDE4EE', 'center', null, 0, 'bold');
+        drawText(`+$${Math.floor((GAME.anesthesia/1000)*10)} speed`, M.sx+M.sw/2 + 180, M.sy+195, 20, '#DDE4EE', 'center', null, 0, 'bold');
+        drawText(`$${GAME.payout}`, M.sx+M.sw/2, M.sy+250, 60, COLORS.green, 'center', 'rgba(0,0,0,0.5)', 4);
     } else {
         // Beautified failure screen
         const failIcon = GAME.lastResult === 'AWAKE' ? '😱' : '⚖️';
         let failTitle = GAME.lastResult === 'AWAKE' ? 'PATIENT WOKE UP' : 'MALPRACTICE LAWSUIT';
         drawText(failIcon, M.sx+M.sw/2, M.sy+55, 56, '#FFF', 'center');
         drawText(failTitle, M.sx+M.sw/2, M.sy+105, 42, COLORS.red, 'center', 'rgba(0,0,0,0.5)', 3);
-        drawText('YOU HAVE BEEN FIRED', M.sx+M.sw/2, M.sy+160, 24, '#888', 'center', null, 0, 'normal');
-        drawText('$0', M.sx+M.sw/2, M.sy+210, 48, '#555', 'center');
+        drawText('YOU HAVE BEEN FIRED', M.sx+M.sw/2, M.sy+160, 28, '#CCC', 'center', 'rgba(0,0,0,0.4)', 3);
+        drawText('$0', M.sx+M.sw/2, M.sy+220, 56, '#777', 'center', 'rgba(0,0,0,0.5)', 4);
         const retryCost = (GAME.rank+1)*300;
         const canAfford = GAME.cash >= retryCost;
         if (!canAfford) {
-            drawText('Not enough cash to retry!', M.sx+M.sw/2, M.sy+255, 18, COLORS.red, 'center', null, 0, 'normal');
+            drawText('Not enough cash to retry!', M.sx+M.sw/2, M.sy+270, 20, COLORS.red, 'center', null, 0, 'bold');
         }
     }
 

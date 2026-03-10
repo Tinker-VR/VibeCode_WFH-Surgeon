@@ -33,8 +33,8 @@ const COLORS = {
 const ARROWS = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
 const ARROW_SYM = { ArrowUp: '⇧', ArrowDown: '⇩', ArrowLeft: '⇦', ArrowRight: '⇨' };
 
-const PROCEDURES = ["9/11 Memorial Rhinoplasty", "Epstein's Autopsy Redo", "Gender Reveal C-Section", "Thoughts & Prayers Bypass", "School Shooting Bullet Removal", "Fentanyl Taste Test", "Trump's Brain Scan (404)", "COVID Lab Leak Patch Job", "Student Loan Lobotomy", "Diddy's Back Surgery", "TikTok Attention Span Implant", "Florida Man Face Reconstruction"];
-const PATIENTS = ["O.J. Simpson", "Jeffrey Epstein", "The Zodiac Killer", "Ted Cruz (Totally Human)", "Your Mom's OnlyFans", "A Literal War Criminal", "CEO Who Fired 10,000", "Anti-Vaxxer Karen", "Flat Earth Mike", "That Kid Who Ate Tide Pods", "An Unpaid Intern", "Baby Named X AE A-12"];
+const PROCEDURES = ["9/11 Memorial Rhinoplasty", "Epstein's Autopsy Redo", "Gender Reveal C-Section", "Thoughts & Prayers Bypass", "School Shooting Bullet Removal", "Fentanyl Taste Test", "Trump's Brain Scan (404)", "COVID Lab Leak Patch Job", "Student Loan Lobotomy", "Diddy's Back Surgery", "TikTok Attention Span Implant", "Florida Man Face Reconstruction", "Ivermectin Detox Flush", "Essential Oil Transplant", "Crypto Bro Ego Reduction", "Tide Pod Stomach Pump", "OnlyFans Carpal Tunnel Fix", "Flat Earth Spine Realignment", "NFT Brain Aneurysm Repair", "Influencer Lip Reversal", "Fortnite Thumb Reconstruction", "AI Hallucination Lobotomy", "Boomer Facebook Virus Removal", "Gender Studies Appendectomy", "Walmart Scooter Hip Replace", "Anti-Vax Immune Reboot"];
+const PATIENTS = ["O.J. Simpson", "Jeffrey Epstein", "The Zodiac Killer", "Ted Cruz (Totally Human)", "Your Mom's OnlyFans", "A Literal War Criminal", "CEO Who Fired 10,000", "Anti-Vaxxer Karen", "Flat Earth Mike", "That Kid Who Ate Tide Pods", "An Unpaid Intern", "Baby Named X AE A-12", "Florida Man (Again)", "A Sentient NFT", "Jake Paul's Last Brain Cell", "Elon's Twitter Intern", "The MyPillow Guy", "A Very Lost Tourist", "Your Uber Driver", "Congress's Oldest Member", "Guy Who Peaked in High School", "A Doomsday Prepper", "MLM Boss Babe", "Someone's Crypto Portfolio", "The HOA President", "A Time Traveler from 2019"];
 
 const CHEEKY_ADS = [
     { headline: 'HOT SINGLES IN YOUR O.R.', sub: 'Nurses HATE this one weird trick!', cta: 'SWIPE RIGHT NOW', color: '#E91E63', bg: '#FCE4EC' },
@@ -51,14 +51,14 @@ const STORE_ITEMS = [
     {id: 'heart_restore', icon: '❤️', title: 'Black Market Organ', desc: 'Restores 1 lost heart', price: 2000, consumable: true},
     {id: 'lawyer', icon: '💼', title: 'Fraudulent Insurance', desc: '+1 extra heart', price: 1500},
     {id: 'energy_anes', icon: '💉', title: 'Ketamine Cocktail', desc: 'Slower anesthesia drain', price: 1200},
-    {id: 'energy_time', icon: '⚡', title: 'Monster Energy Drip', desc: 'Longer sequence timer', price: 1000},
+    {id: 'energy_time', icon: '⚡', title: 'Monster Energy Can', desc: 'Longer sequence timer', price: 1000},
     {id: 'ethernet', icon: '🔌', title: 'Stolen Ethernet', desc: 'No Wi-Fi disconnects', price: 800},
     {id: 'treats', icon: '🐟', title: 'Catnip Bribe', desc: 'Distracts the cat', price: 600},
-    {id: 'mugLid', icon: '☕', title: 'Sippy Cup Lid', desc: 'No coffee spills', price: 500},
+    {id: 'mugLid', icon: '☕', title: 'Spill-Proof Lid', desc: 'No coffee spills', price: 500},
     {id: 'adBlock', icon: '🛑', title: 'uBlock Pirated', desc: 'Blocks popup ads', price: 900},
     {id: 'powerBank', icon: '🔋', title: 'Stolen Tesla Battery', desc: 'Blocks low battery', price: 850},
     {id: 'gamerKB', icon: '⌨️', title: 'Razer DeathBoard', desc: 'No keyboard jams', price: 750},
-    {id: 'antivirus', icon: '🛡️', title: "McAfee's Ghost", desc: 'Deports viruses', price: 950}
+    {id: 'antivirus', icon: '🛡️', title: 'Ant-ICE Virus', desc: 'Deports viruses', price: 950}
 ];
 
 const DEFAULT_UPGRADES = { energy_anes:false, energy_time:false, ethernet:false, treats:false, lawyer:false, mugLid:false, adBlock:false, powerBank:false, gamerKB:false, antivirus:false };

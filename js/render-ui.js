@@ -51,9 +51,9 @@ function drawPauseOverlay() {
         return;
     }
 
-    drawRoundRect(cx-55, cy-65, 40, 100, 8, '#FFF', null);
-    drawRoundRect(cx+15, cy-65, 40, 100, 8, '#FFF', null);
-    drawText('PAUSED', cx, cy+75, 42, '#FFF', 'center', 'rgba(0,0,0,0.5)', 4);
-    drawButton('RESUME', cx - 110, cy + 100, 220, 55, COLORS.green, 26, true);
-    drawButton('QUIT', cx - 110, cy + 170, 220, 55, COLORS.red, 26);
+    drawRoundRect(cx-55, cy-90, 40, 100, 8, '#FFF', null);
+    drawRoundRect(cx+15, cy-90, 40, 100, 8, '#FFF', null);
+    drawText('PAUSED', cx, cy+50, 42, '#FFF', 'center', 'rgba(0,0,0,0.5)', 4);
+    drawButton('RESUME', cx - 110, cy + 75, 220, 55, COLORS.green, 26, true);
+    drawButton('QUIT', cx - 110, cy + 145, 220, 55, COLORS.red, 26);
 }

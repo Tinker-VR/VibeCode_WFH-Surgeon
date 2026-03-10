@@ -6,8 +6,7 @@ function drawDeskItems() {
     const dy = DESK_Y;
     const deskH = CH - DESK_Y;
 
-    // Dim desk props during keyboard hazard so screwdriver stands out
-    if (GAME.hazard === 'kbbreak') ctx.globalAlpha = 0.4;
+    // No dimming during keyboard hazard — keeps desk visible
 
     // === DESK DECOR — draw FIRST so it's BEHIND everything ===
 
@@ -145,7 +144,7 @@ function drawDeskItems() {
 
     // Coaster (coffee ring mark) — moved to match new mug position
     ctx.strokeStyle = 'rgba(0,0,0,0.06)'; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.arc(255, dy + 120, 35, 0, Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(65, dy + 120, 35, 0, Math.PI*2); ctx.stroke();
 
     // === ROUTER (top-left, BIGGER, with natural rotation) ===
     const rx = 10, ry = dy + 5;
@@ -189,8 +188,8 @@ function drawDeskItems() {
     }
     ctx.restore();
 
-    // === MUG (moved right to clear router, with rotation) ===
-    const mx2 = 220, my2 = dy + 80;
+    // === MUG (moved left to clear energy can/keyboard, with rotation) ===
+    const mx2 = 30, my2 = dy + 80;
     const mugW = 75, mugH = 90;
     // Ground shadow — only when NOT spilling (avoids double shadow)
     if (GAME.hazard !== 'coffee') {
@@ -245,14 +244,14 @@ function drawDeskItems() {
 
     const kbBroken = GAME.hazard === 'kbbreak';
     const kbGamer = GAME.upgrades.gamerKB && !kbBroken;
-    const kbBaseColor = kbBroken ? '#3A1A1A' : kbGamer ? '#0A0A0A' : '#2A2A2A';
-    const kbBorderColor = kbBroken ? '#661111' : kbGamer ? '#00E676' : '#1A1A1A';
+    const kbBaseColor = kbBroken ? '#2A2020' : kbGamer ? '#0A0A0A' : '#2A2A2A';
+    const kbBorderColor = kbBroken ? '#551111' : kbGamer ? '#00E676' : '#1A1A1A';
     if (kbGamer) {
         ctx.shadowColor = '#00E676'; ctx.shadowBlur = 12;
     }
     drawShadowRoundRect(kx, ky, kbW, kbH, 10, kbBaseColor, kbBorderColor, 3);
     ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
-    drawRoundRect(kx+3, ky+3, kbW-6, kbH-6, 8, kbBroken ? '#332222' : kbGamer ? '#111' : '#333', null);
+    drawRoundRect(kx+3, ky+3, kbW-6, kbH-6, 8, kbBroken ? '#2E2222' : kbGamer ? '#111' : '#333', null);
     const keyPad = 10, keyGap = 3;
     const keysPerRow = [14, 13, 12, 10];
     const rowH = 18, rowGap = 4;
@@ -264,12 +263,12 @@ function drawDeskItems() {
         const keyW = (availW - (keysPerRow[row]-1)*keyGap) / keysPerRow[row];
         for (let k = 0; k < keysPerRow[row]; k++) {
             const keyX = kx + keyPad + indent + k * (keyW + keyGap);
-            const keyColor = kbBroken ? '#553333' : kbGamer ? '#1A3A1A' : '#444';
-            drawRoundRect(keyX, rowY, keyW, rowH, 3, keyColor, kbGamer ? '#00E676' : '#333', 1);
+            const keyColor = kbBroken ? '#443838' : kbGamer ? '#1A3A1A' : '#444';
+            drawRoundRect(keyX, rowY, keyW, rowH, 3, keyColor, kbBroken ? '#553333' : kbGamer ? '#00E676' : '#333', 1);
         }
     }
     const spaceY = ky + keyPad + 4*(rowH+rowGap);
-    drawRoundRect(kx + keyPad + 80, spaceY, 200, rowH, 5, kbBroken ? '#553333' : kbGamer ? '#1A3A1A' : '#444', kbGamer ? '#00E676' : '#333', 1);
+    drawRoundRect(kx + keyPad + 80, spaceY, 200, rowH, 5, kbBroken ? '#443838' : kbGamer ? '#1A3A1A' : '#444', kbBroken ? '#553333' : kbGamer ? '#00E676' : '#333', 1);
 
     // Arrow keys cluster
     const arrowArea = kx + kbW - 72;
@@ -415,7 +414,7 @@ function drawDeskItems() {
 
     // === ENERGY CAN (next to mug when energy_time active) — bigger, moved higher/right ===
     if (GAME.upgrades.energy_time) {
-        const ecx = 330, ecy = dy + 30;
+        const ecx = 220, ecy = dy + 30;
         const canW = 56, canH = 96;
         ctx.save();
         ctx.translate(ecx + canW/2, ecy + canH/2);
@@ -443,8 +442,7 @@ function drawDeskItems() {
         ctx.restore();
     }
 
-    // Restore alpha after keyboard hazard dimming
-    if (GAME.hazard === 'kbbreak') ctx.globalAlpha = 1;
+    // (No dimming to restore)
 }
 
 // Cat peeking from behind the DESK on the right side — drawn separately from main.js
