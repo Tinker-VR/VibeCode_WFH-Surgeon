@@ -20,8 +20,8 @@
             background-image: radial-gradient(circle, #2a2a2a 0%, #080808 100%);
         }
         #game-container {
-            width: 1280px;
-            height: 720px;
+            width: 1920px;
+            height: 1080px;
             position: absolute;
             left: 50%;
             top: 50%;
@@ -43,7 +43,7 @@
 <body>
 
 <div id="game-container">
-    <canvas id="gameCanvas" width="1280" height="720"></canvas>
+    <canvas id="gameCanvas" width="1920" height="1080"></canvas>
 </div>
 
 <script>
@@ -70,8 +70,8 @@ var DEBUG_GOD_MODE = false;      // true = no heart loss, no anesthesia death, n
 // Proportional window scaling
 function resizeGame() {
     const container = document.getElementById('game-container');
-    const scaleX = window.innerWidth / 1280;
-    const scaleY = window.innerHeight / 720;
+    const scaleX = window.innerWidth / 1920;
+    const scaleY = window.innerHeight / 1080;
     const scale = Math.min(scaleX, scaleY);
     container.style.transform = `translate(-50%, -50%) scale(${scale})`;
 }

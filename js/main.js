@@ -6,7 +6,9 @@ let lastTime = performance.now();
 
 function loop(timestamp) {
     const dt = timestamp - lastTime; lastTime = timestamp;
-    ctx.clearRect(0, 0, CW, CH);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.scale(1.5, 1.5);
 
     if (GAME.state === 'PLAYING' && !GAME.paused) {
         // Hazard slowdown mechanic: slow drain during active hazards
@@ -26,8 +28,6 @@ function loop(timestamp) {
         if (GAME.catFlashTimer > 0) GAME.catFlashTimer -= dt;
         if (GAME.routerSmashAnim > 0) GAME.routerSmashAnim -= dt;
         if (GAME.comboTimer > 0) GAME.comboTimer -= dt;
-        if (GAME.screenFlashTimer > 0) GAME.screenFlashTimer -= dt;
-        if (GAME.hazardSpawnFlash > 0) GAME.hazardSpawnFlash -= dt;
         // Heartbeat at low anesthesia
         if (GAME.anesthesia / GAME.anesthesiaMax < 0.3 && GAME.anesthesia > 0) {
             if (!GAME._lastHeartbeat || timestamp - GAME._lastHeartbeat > 600) {
@@ -87,6 +87,8 @@ function loop(timestamp) {
     if (GAME.greenFlashTimer > 0) GAME.greenFlashTimer -= dt;
     if (GAME.yellowFlashTimer > 0) GAME.yellowFlashTimer -= dt;
     if (GAME.shopFlashTimer > 0) GAME.shopFlashTimer -= dt;
+    if (GAME.screenFlashTimer > 0) GAME.screenFlashTimer -= dt;
+    if (GAME.hazardSpawnFlash > 0) GAME.hazardSpawnFlash -= dt;
 
     let shakeX=0, shakeY=0;
     if (GAME.shakeTimer > 0) {
